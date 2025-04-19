@@ -6,6 +6,8 @@ import TableContent from "./table-content";
 
 const MathExpressions = ({ exp }: { exp: string }) => {
   const [snippets, setSnippets] = React.useState<Record<string, any>[]>([]);
+  const filespath = localStorage.getItem("filespath");
+  const fileshost = `${process.env.NEXT_PUBLIC_RESOURCE_BUCKET_URL}/${filespath}`;
 
   useEffect(() => {
     const snippets = splitContent(exp);
@@ -58,7 +60,7 @@ const MathExpressions = ({ exp }: { exp: string }) => {
                 height={100}
                 width={"auto"}
                 alt=""
-                src={`${process.env.NEXT_PUBLIC_API_URL}/resources/assets/${snippet.img}`}
+                src={`${fileshost}/${snippet.img}`}
               />
             </div>
           );

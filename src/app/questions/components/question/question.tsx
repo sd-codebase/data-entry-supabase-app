@@ -8,6 +8,7 @@ import {
   Space,
   Typography,
 } from "antd";
+import { supabaseBrowserClient } from "@utils/supabase/client";
 import MathExpression from "./math-expression";
 import { useEffect, useState } from "react";
 import { CheckCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
@@ -59,7 +60,7 @@ export const Question = ({
     setIsPending(true);
   };
 
-  const updateQuestionDetails = () => {
+  const updateQuestionDetails = async () => {
     try {
       const previouslyUpdated =
         JSON.parse(localStorage.getItem(`${topicId}-updated`) || "[]") || [];
@@ -69,23 +70,47 @@ export const Question = ({
         JSON.stringify(previouslyUpdated)
       );
     } catch (error) {}
+
     if (que.id) {
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/questions/${que.id}`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(que),
-      })
-        .then((res) => res.json())
-        .then((data) => {
-          console.log({ data });
-          message.success("Question updated successfully");
-        })
-        .catch((err) => {
-          console.error(err);
-        });
+      try {
+        const queOb: any = {
+          question: que.question,
+          options: que.options,
+          has_integer_answer: que.hasIntegerAnswer,
+          answer: que.answer,
+          solutions: que.solutions,
+          sr_no: que.srNo,
+          pyo: que.pyo,
+          topic_id: que.topicId,
+        };
+        if (que.isMarkedForReview) {
+          queOb.is_marked_for_review = que.isMarkedForReview;
+        }
+        if (que.reviewInApp) {
+          queOb.review_in_app = que.reviewInApp;
+        }
+        if (que.level) {
+          queOb.level = Number(que.level || 0);
+        }
+
+        const { error } = await supabaseBrowserClient
+          .from("questions")
+          .update(queOb)
+          .eq("id", que.id);
+
+        if (error) {
+          console.error("Error updating question:", error);
+          message.error("Failed to update question");
+          return;
+        }
+
+        message.success("Question updated successfully");
+      } catch (err) {
+        console.error(err);
+        message.error("Failed to update question");
+      }
     }
+
     if (handleUpdate) {
       handleUpdate(que);
     }

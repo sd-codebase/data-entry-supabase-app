@@ -26,6 +26,7 @@ interface Topic {
   name: string;
   chapterId: string;
   order: number;
+  resources_directory: string;
 }
 
 interface Options {
@@ -151,11 +152,18 @@ export default function DropdownFilters({
           ) || [],
         topic:
           topicData?.map(
-            ({ id, name, chapter_id: chapterId, order_num: order }) => ({
+            ({
+              id,
+              name,
+              chapter_id: chapterId,
+              order_num: order,
+              resources_directory,
+            }) => ({
               id,
               name,
               chapterId,
               order,
+              resources_directory,
             })
           ) || [],
       });
@@ -183,12 +191,7 @@ export default function DropdownFilters({
     const topics = options.topic.filter(
       ({ chapterId }) => chapterId === values.chapter
     );
-    localStorage.setItem(
-      "filespath",
-      `${course?.name}/${subject?.name}/${chapter?.name}`
-        .toLowerCase()
-        .replaceAll(" ", "-")
-    );
+    localStorage.setItem("filespath", topic?.resources_directory as string);
     handleFilterSubmit({ course, subject, chapter, topic, topics });
   };
 

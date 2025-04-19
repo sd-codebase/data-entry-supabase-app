@@ -6,6 +6,7 @@ import React, { useEffect, useState } from "react";
 import { Question } from "./question/question";
 import DropdownFilters from "../../../components/dropdown-filters/dropdown-filters";
 import { supabaseBrowserClient } from "@utils/supabase/client";
+import { FloatButton } from "antd";
 
 const { Title } = Typography;
 
@@ -362,69 +363,72 @@ const QuestionComponent: React.FC = () => {
   };
 
   return (
-    <Flex gap={24} vertical>
-      <DropdownFilters handleFilterSubmit={handleFilterSubmit} />
-      <Flex gap={12}>
-        <Flex vertical gap={12} style={{ width: "40rem" }}>
-          <TextArea
-            value={questionText}
-            onChange={handleQuestionTextChange}
-            rows={30}
-            cols={100}
-            style={{
-              background: "transparent",
-              caretColor: "white",
-              color: "white",
-            }}
-          />
-        </Flex>
-        <Flex vertical gap={12} style={{ width: "40rem" }}>
-          <TextArea
-            value={solutionText}
-            onChange={handleSolutionTextChange}
-            rows={30}
-            cols={100}
-            style={{
-              background: "transparent",
-              caretColor: "white",
-              color: "white",
-            }}
-          />
-        </Flex>
-        <Flex vertical gap={12}>
-          <Title level={5}>Topic: {filters?.topic?.name}</Title>
-          <Button
-            type="primary"
-            disabled={!solutionText.length || !questionText.length}
-            onClick={transformAndMapQuestions}
-          >
-            Transform Data
-            <RightOutlined />
-          </Button>
-          <Button
-            type="primary"
-            disabled={!questions?.length}
-            onClick={saveQuestions}
-          >
-            Save
-            <SaveOutlined />
-          </Button>
-        </Flex>
-      </Flex>
-
-      <Flex vertical gap={12} style={{ width: "100%" }}>
-        {questions?.map((question, index) => (
-          <div key={index}>
-            <Question
-              question={question}
-              handleUpdate={(que) => handleUpdate(que, index)}
-              topicId={filters?.topic?.id}
-              isUpdatedQuestion={previouslyUpdated?.includes(question?.srNo)}
+    <>
+      <Flex gap={24} vertical>
+        <DropdownFilters handleFilterSubmit={handleFilterSubmit} />
+        <Flex gap={12}>
+          <Flex vertical gap={12} style={{ width: "40rem" }}>
+            <TextArea
+              value={questionText}
+              onChange={handleQuestionTextChange}
+              rows={30}
+              cols={100}
+              style={{
+                background: "transparent",
+                caretColor: "white",
+                color: "white",
+              }}
             />
-          </div>
-        ))}
+          </Flex>
+          <Flex vertical gap={12} style={{ width: "40rem" }}>
+            <TextArea
+              value={solutionText}
+              onChange={handleSolutionTextChange}
+              rows={30}
+              cols={100}
+              style={{
+                background: "transparent",
+                caretColor: "white",
+                color: "white",
+              }}
+            />
+          </Flex>
+          <Flex vertical gap={12}>
+            <Title level={5}>Topic: {filters?.topic?.name}</Title>
+            <Button
+              type="primary"
+              disabled={!solutionText.length || !questionText.length}
+              onClick={transformAndMapQuestions}
+            >
+              Transform Data
+              <RightOutlined />
+            </Button>
+            <Button
+              type="primary"
+              disabled={!questions?.length}
+              onClick={saveQuestions}
+            >
+              Save
+              <SaveOutlined />
+            </Button>
+          </Flex>
+        </Flex>
+
+        <Flex vertical gap={12} style={{ width: "100%" }}>
+          {questions?.map((question, index) => (
+            <div key={index}>
+              <Question
+                question={question}
+                handleUpdate={(que) => handleUpdate(que, index)}
+                topicId={filters?.topic?.id}
+                isUpdatedQuestion={previouslyUpdated?.includes(question?.srNo)}
+              />
+            </div>
+          ))}
+        </Flex>
       </Flex>
-    </Flex>
+      <FloatButton.BackTop />
+    </>
   );
 };
 

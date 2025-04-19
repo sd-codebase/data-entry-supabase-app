@@ -6,6 +6,7 @@ import { Question } from "@app/questions/components/question/question";
 import { Flex } from "antd";
 import React, { use, useEffect, useState } from "react";
 import { QuestionsListInfo } from "./questions-list-info";
+import { FloatButton } from "antd";
 
 export function QuestionsListContainer() {
   const [filters, setFilters] = useState<Record<string, any>>({});
@@ -61,19 +62,22 @@ export function QuestionsListContainer() {
   };
 
   return (
-    <Flex vertical gap={"1rem"}>
-      <DropdownFilters handleFilterSubmit={handleFilterSubmit} />
-      <QuestionsListInfo questions={questions} />
-      <Flex vertical gap={12} style={{ width: "100%" }}>
-        {questions?.map((question, index) => (
-          <div key={index}>
-            <Question
-              question={question}
-              handleUpdate={(que) => handleUpdate(que, index)}
-            />
-          </div>
-        ))}
+    <>
+      <Flex vertical gap={"1rem"}>
+        <DropdownFilters handleFilterSubmit={handleFilterSubmit} />
+        <QuestionsListInfo questions={questions} />
+        <Flex vertical gap={12} style={{ width: "100%" }}>
+          {questions?.map((question, index) => (
+            <div key={index}>
+              <Question
+                question={question}
+                handleUpdate={(que) => handleUpdate(que, index)}
+              />
+            </div>
+          ))}
+        </Flex>
       </Flex>
-    </Flex>
+      <FloatButton.BackTop />
+    </>
   );
 }
