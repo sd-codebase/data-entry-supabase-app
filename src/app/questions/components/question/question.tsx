@@ -144,6 +144,7 @@ export const Question = ({
         }
 
         message.success("Question updated successfully");
+        reloadQuestion();
       } catch (err) {
         console.error(err);
         message.error("Failed to update question");
