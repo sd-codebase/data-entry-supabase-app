@@ -45,6 +45,13 @@ export default function RootLayout({
                     notificationProvider={useNotificationProvider}
                     resources={[
                       {
+                        name: "format-solutions",
+                        list: "/solutions",
+                        meta: {
+                          canDelete: true,
+                        },
+                      },
+                      {
                         name: "questions",
                         list: "/questions",
                         meta: {

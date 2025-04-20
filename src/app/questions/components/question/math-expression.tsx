@@ -51,7 +51,9 @@ const MathExpressions = ({ exp }: { exp: string }) => {
   if (!snippets.length) return null;
 
   return (
-    <>
+    <div
+      style={{ border: "1px solid #ccc", padding: "0.25rem", width: "300px" }}
+    >
       {snippets?.map((snippet, index) => {
         if (snippet.type === "image") {
           return (
@@ -75,7 +77,7 @@ const MathExpressions = ({ exp }: { exp: string }) => {
           </div>
         );
       })}
-    </>
+    </div>
   );
 };
 
