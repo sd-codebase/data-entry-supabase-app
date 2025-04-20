@@ -11,7 +11,12 @@ import {
 import { supabaseBrowserClient } from "@utils/supabase/client";
 import MathExpression from "./math-expression";
 import { useEffect, useState } from "react";
-import { CheckCircleOutlined, ClockCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleOutlined,
+  CheckOutlined,
+  ClockCircleOutlined,
+  ReloadOutlined,
+} from "@ant-design/icons";
 
 interface QuestionProps {
   question: any;
@@ -49,6 +54,39 @@ export const Question = ({
     }
   }, [question]);
 
+  const reloadQuestion = async () => {
+    if (que.id) {
+      try {
+        const { data, error } = await supabaseBrowserClient
+          .from("questions")
+          .select("*")
+          .eq("id", que.id)
+          .single();
+
+        if (error) {
+          console.error("Error fetching question:", error);
+          return;
+        }
+
+        const formattedData = {
+          ...data,
+          srNo: data.sr_no,
+          hasIntegerAnswer: data.has_integer_answer,
+          isMarkedForReview: data.is_marked_for_review,
+          reviewInApp: data.review_in_app,
+          isActive: data.is_active,
+          topicId: data.topic_id,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+        };
+
+        setQue(formattedData);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
   const updateQuestion = (value: any, field: string, index?: any) => {
     const newOb = { ...que };
     if (index !== undefined) {
@@ -82,6 +120,7 @@ export const Question = ({
           sr_no: que.srNo,
           pyo: que.pyo,
           topic_id: que.topicId,
+          verified_in_app: false,
         };
         if (que.isMarkedForReview) {
           queOb.is_marked_for_review = que.isMarkedForReview;
@@ -134,13 +173,28 @@ export const Question = ({
             {!onlyPreview ? (
               <Flex gap={"0.5rem"} style={{ paddingRight: "5rem" }}>
                 {que.id ? (
-                  <Button
-                    color={que.reviewInApp === true ? "green" : "default"}
-                    variant="solid"
-                    onClick={() => updateQuestion(true, "reviewInApp")}
-                  >
-                    View In App
-                  </Button>
+                  <>
+                    {que.verified_in_app ? (
+                      <Button color="green" variant="solid">
+                        <CheckOutlined />
+                      </Button>
+                    ) : null}
+
+                    <Button
+                      color="blue"
+                      variant="solid"
+                      onClick={reloadQuestion}
+                    >
+                      <ReloadOutlined />
+                    </Button>
+                    <Button
+                      color={que.reviewInApp === true ? "green" : "default"}
+                      variant="solid"
+                      onClick={() => updateQuestion(true, "reviewInApp")}
+                    >
+                      View In App
+                    </Button>
+                  </>
                 ) : null}
 
                 <Button
