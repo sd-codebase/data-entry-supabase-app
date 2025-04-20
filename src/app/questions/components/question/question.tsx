@@ -152,23 +152,23 @@ export const Question = ({
                   review
                 </Button>
                 <Button
-                  color={que.level === "1" ? "green" : "default"}
+                  color={que.level === 1 ? "green" : "default"}
                   variant="solid"
-                  onClick={() => updateQuestion("1", "level")}
+                  onClick={() => updateQuestion(1, "level")}
                 >
                   L1
                 </Button>
                 <Button
-                  color={que.level === "2" ? "green" : "default"}
+                  color={que.level === 2 ? "green" : "default"}
                   variant="solid"
-                  onClick={() => updateQuestion("2", "level")}
+                  onClick={() => updateQuestion(2, "level")}
                 >
                   L2
                 </Button>
                 <Button
-                  color={que.level === "3" ? "green" : "default"}
+                  color={que.level === 3 ? "green" : "default"}
                   variant="solid"
-                  onClick={() => updateQuestion("3", "level")}
+                  onClick={() => updateQuestion(3, "level")}
                 >
                   L3
                 </Button>
