@@ -207,6 +207,13 @@ export const Question = ({
                   review
                 </Button>
                 <Button
+                  color={que.level === 0 ? "green" : "default"}
+                  variant="solid"
+                  onClick={() => updateQuestion(0, "level")}
+                >
+                  No Level
+                </Button>
+                <Button
                   color={que.level === 1 ? "green" : "default"}
                   variant="solid"
                   onClick={() => updateQuestion(1, "level")}

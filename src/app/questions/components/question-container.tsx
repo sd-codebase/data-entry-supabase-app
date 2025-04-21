@@ -24,10 +24,12 @@ const QuestionComponent: React.FC = () => {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [previouslyUpdated, setPreviouslyUpdated] = useState<any>([]);
 
+  const [errors, setErrors] = useState<any>([]);
+
   const questionBlockStartFinder = /\n(\d+)/g;
   const questionStartFinder = /\n(\d+)/g;
   const pyoFinder = /\n\[/g;
-  const optionsStartFinder = /\n\(1\) |\n\(a\) |\n\(A\)\s/g;
+  const optionsStartFinder = /\n\(1\) |\n\(a\) |\n\(a\)\n|\n\(A\)\s/g;
   const optionsFinder = /\n\([a-h]\)\s/g;
 
   useEffect(() => {
@@ -44,7 +46,13 @@ const QuestionComponent: React.FC = () => {
     }
   }, [filters?.topic?.id]);
 
+  const addErrors = (error: string) => {
+    setErrors((prevErrors: any) => [...prevErrors, error]);
+    console.log({ errors });
+  };
+
   const transformAndMapQuestions = () => {
+    setErrors([]);
     if (!filters?.topic?.id) {
       message.error("Selecte a topic to save questions", 5);
       return;
@@ -53,10 +61,16 @@ const QuestionComponent: React.FC = () => {
     const answers = transformSolutionText();
     if (Object.keys(questions).length !== Object.keys(answers).length) {
       message.error("Questions and Answers count do not match", 5);
+      addErrors(
+        `Questions and Answers count do not match: Questions: ${Object.keys(
+          questions
+        ).join(",")}, Answers: ${Object.keys(answers).join(",")}`
+      );
     }
     const questionsList = Object.keys(questions).map((questionNumber) => {
       if (!answers[questionNumber]) {
-        message.error(`Answer for Q.${questionNumber} not found`, 5);
+        message.error(`Answer for Q. ${questionNumber} not found`, 5);
+        addErrors(`Answer for Q. ${questionNumber} not found`);
       }
       return {
         srNo: Number(questionNumber),
@@ -110,7 +124,7 @@ const QuestionComponent: React.FC = () => {
       .replace(
         /\\begin{align\*}([\s\S]+?)\\end{align\*}/g,
         (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
+          return `$$\n${match.trim().replaceAll("\n", " \\\\\n")} \n$$`;
         }
       )
       .replace(/\\begin{array}([\s\S]+?)\\end{array}/g, (match, content) => {
@@ -131,7 +145,7 @@ const QuestionComponent: React.FC = () => {
       .replace(
         /\\begin{equation\*}([\s\S]+?)\\end{equation\*}/g,
         (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
+          return `$$\n ${match.trim().replaceAll("\n", " \\\\\n")} \n$$`;
         }
       )
       .replace(
@@ -150,7 +164,26 @@ const QuestionComponent: React.FC = () => {
 
   const transformQuestionText = () => {
     try {
-      const transformedSections = transformSections(questionText);
+      // replace space + [ +AIEEE or space + [ + 20 with \n + match
+      const regex = /(\s+\[AIEEE|\s+\[20)/g;
+      const transformedPyos = questionText.replace(regex, (match) => {
+        return `\n${match.trim()}`;
+      });
+      // remove complete line if line has \section+ anything
+
+      const regex2 = /^.*\\section.*$/gm;
+      const removedSectionsLine = transformedPyos.replace(regex2, "");
+      const regExToQuestionNo = /\n\$\d+\s/g;
+      // find number from \n$ + number + space and replace it with number  space $
+      const transformedQuestionNo = removedSectionsLine.replace(
+        regExToQuestionNo,
+        (match) => {
+          const number = match.split("$")[1].trim();
+          return `\n${number} $`;
+        }
+      );
+
+      const transformedSections = transformSections(transformedQuestionNo);
       const optsTransformed = transformAllOptSections(transformedSections);
       console.log({ optsTransformed });
       const tableRegex =
@@ -185,7 +218,11 @@ const QuestionComponent: React.FC = () => {
             } has both integer answer and options`,
             5
           );
-          return;
+          addErrors(
+            `Q.${
+              question.split(`\n{{Q}}`)[0]
+            } has both integer answer and options`
+          );
         }
         if (
           !question.includes(` {{INTEGER_ANSWER}} `) &&
@@ -197,10 +234,15 @@ const QuestionComponent: React.FC = () => {
             } has NO integer answer and NO options`,
             5
           );
-          return;
+          addErrors(
+            `Q.${
+              question.split(`\n{{Q}}`)[0]
+            } has NO integer answer and NO options`
+          );
         }
         if (!question.includes(`{{PYO}}`)) {
           message.error(`Q.${question.split(`\n{{Q}}`)[0]} has no PYO!`, 5);
+          addErrors(`Q.${question.split(`\n{{Q}}`)[0]} has no PYO!`);
           // return;
         }
         const questionParts = question
@@ -217,14 +259,30 @@ const QuestionComponent: React.FC = () => {
           questionParts[2] = "NA";
         }
         const questionNumber = questionParts[0]?.trim();
-        const questionTextPart = questionParts[1]?.trimStart()?.trimEnd();
-        const pyoText = questionParts[2]?.trimStart()?.trimEnd();
+        let questionTextPart = questionParts[1]?.trimStart()?.trimEnd();
+        let pyoText = questionParts[2]?.trimStart()?.trimEnd();
+        // replace ]\n with ]###\n
+        // split by ### and take first part as pyoText and second part as questionTextPart
+        const splittedPyoText = pyoText.replace("]\n", "]###\n").split("###");
+        if (splittedPyoText.length > 1) {
+          pyoText = splittedPyoText[0]?.trimStart()?.trimEnd();
+          questionTextPart = `${questionTextPart} ${splittedPyoText[1]}`;
+        }
+
+        // add intege answer if no integer answer or options exists
+        if (
+          !questionTextPart.includes(` {{INTEGER_ANSWER}} `) &&
+          !questionParts[3]?.includes(`\n{{OP}}`)
+        ) {
+          questionTextPart = `${questionTextPart} {{INTEGER_ANSWER}} `;
+        }
 
         questions[questionNumber] = {
           question: questionTextPart,
           pyo: pyoText,
           hasIntegerAnswer: !!questionTextPart.includes(`{{INTEGER_ANSWER}}`),
         };
+
         if (
           !questionTextPart.includes(` {{INTEGER_ANSWER}} `) &&
           questionParts[3]?.includes(`\n{{OP}}`)
@@ -256,16 +314,23 @@ const QuestionComponent: React.FC = () => {
     return textContent
       .replace(
         /\\begin{enumerate}\s+\\setcounter{enumi}{(\d+)}\s+\\item/g,
-        (match, number) => `${parseInt(number) + 1}.`
+        (match, number) =>
+          `${
+            parseInt(number) < 9
+              ? "0" + (parseInt(number) + 1)
+              : parseInt(number) + 1
+          }.`
       )
-      .replace(/\\end{enumerate}/g, "");
+      .replace(/\\end{enumerate}/g, "")
+      .replace(/\\begin{center}/g, "")
+      .replace(/\\end{center}/g, "");
   };
 
   const transformSolutionText = () => {
     try {
-      const transformedEnumerator = transformEnumerators(solutionText);
-      setSolutionText(transformedEnumerator);
-      const transformedSections = transformSections(transformedEnumerator);
+      const regex2 = /^.*\\section.*$/gm;
+      const removedSectionsLine = solutionText.replace(regex2, "");
+      const transformedSections = transformSections(removedSectionsLine);
       const tableRegex =
         /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
       const transformedText = transformedSections
@@ -298,6 +363,7 @@ const QuestionComponent: React.FC = () => {
             ?.split("Alternate Solution"),
         };
       });
+      console.log({ answers: answers });
       return answers;
     } catch (error) {
       console.log(error);
@@ -344,7 +410,14 @@ const QuestionComponent: React.FC = () => {
   const handleSolutionTextChange = (
     event: React.ChangeEvent<HTMLTextAreaElement>
   ) => {
-    setSolutionText(event.target.value?.replaceAll("[0pt]", ""));
+    let data = event.target.value?.replaceAll("[0pt]", "");
+    data = transformEnumerators(data);
+    // replace \n + number + space with \n + number + . + space
+    data = data.replace(/(\n)(\d+)\s/g, (match, p1, p2) => {
+      return `${p1}${p2}. `;
+    });
+    console.log(data);
+    setSolutionText(data);
   };
 
   const handleFilterSubmit = (values: Record<string, any>) => {
