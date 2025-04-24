@@ -7,7 +7,7 @@ const TableContent = ({ tableContent }: any) => {
   >([]);
   React.useEffect(() => {
     const tableContentArray = tableContent
-      .split("\n\\hline\n")
+      .split("\n\\S\\hline\\S\n")
       .map((row: string) => {
         const columns = row.split("&");
         return columns;
