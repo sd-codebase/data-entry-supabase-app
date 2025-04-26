@@ -130,6 +130,8 @@ export const Question = ({
         }
         if (que.level) {
           queOb.level = Number(que.level || 0);
+        } else {
+          queOb.level = 0;
         }
 
         const { error } = await supabaseBrowserClient
