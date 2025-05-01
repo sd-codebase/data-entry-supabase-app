@@ -164,9 +164,13 @@ const QuestionComponent: React.FC = () => {
 
   const transformQuestionText = () => {
     try {
+      let queText = questionText.replace(
+        /\\section\*{Topic ([^}]+)}/g,
+        (_, topic) => `##Topic ${topic}##`
+      );
       // replace space + [ +AIEEE or space + [ + 20 with \n + match
       const regex = /(\s+\[AIEEE|\s+\[20)/g;
-      const transformedPyos = questionText.replace(regex, (match) => {
+      const transformedPyos = queText.replace(regex, (match) => {
         return `\n${match.trim()}`;
       });
       // remove complete line if line has \section+ anything
@@ -313,23 +317,28 @@ const QuestionComponent: React.FC = () => {
   const transformEnumerators = (textContent: string) => {
     return textContent
       .replace(
-        /\\begin{enumerate}\s+\\setcounter{enumi}{(\d+)}\s+\\item/g,
-        (match, number) =>
-          `${
-            parseInt(number) < 9
-              ? "0" + (parseInt(number) + 1)
-              : parseInt(number) + 1
-          }.`
+        /\\begin{enumerate}\s*\\setcounter{enumi}{(\d+)}([\s\S]*?)\\end{enumerate}/g,
+        (_, startIndex, body) => {
+          let index = parseInt(startIndex, 10) + 1;
+          return body.replace(/\s*\\item\s*/g, () => {
+            const formatted = index < 10 ? `0${index}` : `${index}`;
+            index++;
+            return `\n${formatted}. `;
+          });
+        }
       )
-      .replace(/\\end{enumerate}/g, "")
       .replace(/\\begin{center}/g, "")
       .replace(/\\end{center}/g, "");
   };
 
   const transformSolutionText = () => {
     try {
+      let soltext = solutionText.replace(
+        /\\section\*{Topic ([^}]+)}/g,
+        (_, topic) => `##Topic ${topic}##`
+      );
       const regex2 = /^.*\\section.*$/gm;
-      const removedSectionsLine = solutionText.replace(regex2, "");
+      const removedSectionsLine = soltext.replace(regex2, "");
       const transformedSections = transformSections(removedSectionsLine);
       const tableRegex =
         /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
@@ -416,6 +425,8 @@ const QuestionComponent: React.FC = () => {
     data = data.replace(/(\n)(\d+)\s/g, (match, p1, p2) => {
       return `${p1}${p2}. `;
     });
+    data = data.replace(/\n(\d+ )/g, "\n $1");
+
     console.log(data);
     setSolutionText(data);
   };

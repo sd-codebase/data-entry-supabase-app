@@ -68,7 +68,12 @@ const MathExpressions = ({ exp }: { exp: string }) => {
                 <Image
                   alt=""
                   src={`${fileshost}/${snippet.img}`}
-                  style={{ maxHeight: 200, maxWidth: 300, borderRadius: 8 }}
+                  fallback="https://ondc.bajajfinservmarkets.in/_next/static/media/no-preview.794963f5.jpg"
+                  style={{
+                    maxHeight: 200,
+                    maxWidth: 300,
+                    borderRadius: 8,
+                  }}
                 />
               </div>
             </div>

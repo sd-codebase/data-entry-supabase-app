@@ -52,6 +52,13 @@ export default function RootLayout({
                         },
                       },
                       {
+                        name: "format-sections",
+                        list: "/formatter",
+                        meta: {
+                          canDelete: true,
+                        },
+                      },
+                      {
                         name: "questions",
                         list: "/questions",
                         meta: {
