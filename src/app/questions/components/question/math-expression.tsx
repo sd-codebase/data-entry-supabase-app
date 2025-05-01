@@ -16,6 +16,12 @@ const MathExpressions = ({ exp }: { exp: string }) => {
   }, [exp]);
 
   function splitContent(content: string) {
+    content = content.replace(
+      /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)|\n/g,
+      (match, mathBlock) => {
+        return mathBlock ? match : "\\nl";
+      }
+    );
     const regexToReplaceImgStart = "{{img_";
     const regexToReplaceImgEnd = "_img}}";
     const regexToReplaceTableStart = "{{table_";
