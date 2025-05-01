@@ -64,11 +64,11 @@ const MathExpressions = ({ exp }: { exp: string }) => {
         if (snippet.type === "image") {
           return (
             <div key={index} style={{ margin: "1rem 0" }}>
-              <div style={{ maxHeight: 175, maxWidth: 175, borderRadius: 8 }}>
+              <div>
                 <Image
                   alt=""
                   src={`${fileshost}/${snippet.img}`}
-                  style={{ width: "100%", height: "auto", borderRadius: 8 }}
+                  style={{ maxHeight: 200, maxWidth: 300, borderRadius: 8 }}
                 />
               </div>
             </div>
