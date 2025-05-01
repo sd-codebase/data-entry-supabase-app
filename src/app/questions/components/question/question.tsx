@@ -47,7 +47,7 @@ export const Question = ({
 
   useEffect(() => {
     if (question) {
-      setQue(question);
+      setQue(addOptionsIfMissing(question));
       console.log({ question });
     } else {
       setQue(null);
@@ -80,11 +80,18 @@ export const Question = ({
           updatedAt: data.updated_at,
         };
 
-        setQue(formattedData);
+        setQue(addOptionsIfMissing(formattedData));
       } catch (err) {
         console.error(err);
       }
     }
+  };
+
+  const addOptionsIfMissing = (data: any) => {
+    if (!data.hasIntegerAnswer) {
+      data.options = { a: "", b: "", c: "", d: "", ...data.options };
+    }
+    return data;
   };
 
   const updateQuestion = (value: any, field: string, index?: any) => {

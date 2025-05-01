@@ -1,10 +1,12 @@
+import { Flex } from "antd";
 import React from "react";
+import TableFormatter from "./components/table-formatter";
 
 const FormattingPage = () => {
   return (
-    <div>
-      <h1>Sulutions</h1>
-    </div>
+    <Flex vertical>
+      <TableFormatter />
+    </Flex>
   );
 };
 
