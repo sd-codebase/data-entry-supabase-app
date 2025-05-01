@@ -1,7 +1,7 @@
-import React, { use, useEffect } from "react";
-import "katex/dist/katex.min.css";
-import Latex from "react-latex-next";
 import { Image } from "antd";
+import "katex/dist/katex.min.css";
+import React, { useEffect } from "react";
+import Latex from "react-latex-next";
 import TableContent from "./table-content";
 
 const MathExpressions = ({ exp }: { exp: string }) => {
@@ -16,12 +16,14 @@ const MathExpressions = ({ exp }: { exp: string }) => {
   }, [exp]);
 
   function splitContent(content: string) {
+    // replace new line(\n) with \nl (except between $ and 4 or $$ and $$)
     content = content.replace(
-      /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$)|\n/g,
+      /(\$\$[\s\S]*?\$\$|\$[\s\S]*?\$|\{\{table_[\s\S]*?_table\}\})|\n/g,
       (match, mathBlock) => {
         return mathBlock ? match : "\\nl";
       }
     );
+
     const regexToReplaceImgStart = "{{img_";
     const regexToReplaceImgEnd = "_img}}";
     const regexToReplaceTableStart = "{{table_";
@@ -62,12 +64,13 @@ const MathExpressions = ({ exp }: { exp: string }) => {
         if (snippet.type === "image") {
           return (
             <div key={index} style={{ margin: "1rem 0" }}>
-              <Image
-                height={100}
-                width={"auto"}
-                alt=""
-                src={`${fileshost}/${snippet.img}`}
-              />
+              <div style={{ maxHeight: 175, maxWidth: 175, borderRadius: 8 }}>
+                <Image
+                  alt=""
+                  src={`${fileshost}/${snippet.img}`}
+                  style={{ width: "100%", height: "auto", borderRadius: 8 }}
+                />
+              </div>
             </div>
           );
         } else if (snippet.type === "table") {

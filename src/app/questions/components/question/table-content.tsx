@@ -1,5 +1,6 @@
 import React from "react";
 import CellContent from "./cell-content";
+import "./table.css";
 
 const TableContent = ({ tableContent }: any) => {
   const [tableContentArray, setTableContentArray] = React.useState<
@@ -19,7 +20,7 @@ const TableContent = ({ tableContent }: any) => {
   if (!tableContentArray.length) return null;
 
   return (
-    <table>
+    <table className="bordered">
       <tbody>
         {tableContentArray?.map((row, index) => (
           <tr key={index}>

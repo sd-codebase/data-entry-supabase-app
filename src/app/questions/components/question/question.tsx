@@ -331,7 +331,7 @@ export const Question = ({
             <Title level={5}>Solution: </Title>
             {que.solutions?.map((solution: any, index: number) => (
               <div key={index}>
-                {index === 1 ? (
+                {index === 1 && solution?.trim() ? (
                   <Title level={5}>Alternate Solution: </Title>
                 ) : null}
                 <MathExpression exp={solution} />

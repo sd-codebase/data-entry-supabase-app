@@ -1,0 +1,6 @@
+table.bordered,
+.bordered th,
+.bordered td {
+  border: 1px solid gray;
+  border-collapse: collapse;
+}
