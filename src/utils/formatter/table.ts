@@ -19,7 +19,9 @@ export const formatTableContent = (input: string): string => {
       (_, start, body, end) => {
         const modifiedBody = body
           .replace(/\n\\hline\n/g, "\n")
-          .replace(/\n/g, "\n\\hline\n");
+          .replace(/\n/g, "\n\\hline\n")
+          .replace(/\n(\d+)/g, "\n $1");
+
         return `${start}${modifiedBody}${end}`;
       }
     )
@@ -33,8 +35,7 @@ export const formatTableContent = (input: string): string => {
     })
 
     .replace("{List I}", "List I")
-    .replace("{List II}", "List II")
-    .replace(/\n(\d+)/g, "\n $1");
+    .replace("{List II}", "List II");
 };
 
 export const parseTableContent = (tableContent: string): string[][] => {

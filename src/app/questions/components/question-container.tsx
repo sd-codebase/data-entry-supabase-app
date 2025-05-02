@@ -7,6 +7,7 @@ import { Question } from "./question/question";
 import DropdownFilters from "../../../components/dropdown-filters/dropdown-filters";
 import { supabaseBrowserClient } from "@utils/supabase/client";
 import { FloatButton } from "antd";
+import { formatTableContent } from "@utils/formatter/table";
 
 const { Title } = Typography;
 
@@ -176,7 +177,9 @@ const QuestionComponent: React.FC = () => {
       // remove complete line if line has \section+ anything
 
       const regex2 = /^.*\\section.*$/gm;
-      const removedSectionsLine = transformedPyos.replace(regex2, "");
+      let removedSectionsLine = transformedPyos.replace(regex2, "");
+      removedSectionsLine = formatTableContent(removedSectionsLine);
+
       const regExToQuestionNo = /\n\$\d+\s/g;
       // find number from \n$ + number + space and replace it with number  space $
       const transformedQuestionNo = removedSectionsLine.replace(
@@ -192,7 +195,7 @@ const QuestionComponent: React.FC = () => {
       console.log({ optsTransformed });
       const tableRegex =
         /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
-      const transformedText = optsTransformed
+      let transformedText = optsTransformed
         .replace(
           questionBlockStartFinder,
           (match, number) => `\n{{QB}}\n${number}`
@@ -206,8 +209,9 @@ const QuestionComponent: React.FC = () => {
         .replace(
           /\\includetblgraphics\[.*?\]\{(.*?)\}/g,
           "{{imgcell_$1.jpg_imgcell}}"
-        )
-        .replace(tableRegex, "{{table_$1_table}}");
+        );
+      // .replace(tableRegex, "{{table_$1_table}}");
+      // transformedText = formatTableContent(transformedText);
       console.log({ transformedText });
       const questionsList = transformedText.split(`{{QB}}`).slice(1);
       const questions = {} as any;
@@ -342,7 +346,7 @@ const QuestionComponent: React.FC = () => {
       const transformedSections = transformSections(removedSectionsLine);
       const tableRegex =
         /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
-      const transformedText = transformedSections
+      let transformedText = transformedSections
         .replace(
           /\n(\d+).\s/g,
           (match, number) => `\n{{SB}}${number} \n{{Ans}}\n`
@@ -352,8 +356,18 @@ const QuestionComponent: React.FC = () => {
         .replace(
           /\\includetblgraphics\[.*?\]\{(.*?)\}/g,
           "{{imgcell_$1.jpg_imgcell}}"
-        )
-        .replace(tableRegex, "{{table_$1_table}}");
+        );
+      // .replace(tableRegex, "{{table_$1_table}}");
+      transformedText = formatTableContent(transformedText);
+      // replace \n + number + space with \n + number + . + space
+      transformedText = transformedText.replace(
+        /(\n)(\d+)\s/g,
+        (match, p1, p2) => {
+          return `${p1}${p2}. `;
+        }
+      );
+      transformedText = transformedText.replace(/\n(\d+ )/g, "\n $1");
+
       const answersList = transformedText.split(`{{SB}}`).slice(1);
       const answers = {} as any;
       answersList.forEach((answer) => {
@@ -421,11 +435,12 @@ const QuestionComponent: React.FC = () => {
   ) => {
     let data = event.target.value?.replaceAll("[0pt]", "");
     data = transformEnumerators(data);
-    // replace \n + number + space with \n + number + . + space
-    data = data.replace(/(\n)(\d+)\s/g, (match, p1, p2) => {
-      return `${p1}${p2}. `;
-    });
-    data = data.replace(/\n(\d+ )/g, "\n $1");
+
+    // // replace \n + number + space with \n + number + . + space
+    // data = data.replace(/(\n)(\d+)\s/g, (match, p1, p2) => {
+    //   return `${p1}${p2}. `;
+    // });
+    // data = data.replace(/\n(\d+ )/g, "\n $1");
 
     console.log(data);
     setSolutionText(data);
