@@ -19,6 +19,9 @@ export const formatTableContent = (input: string): string => {
       (_, start, body, end) => {
         const modifiedBody = body
           .replace(/\n\\hline\n/g, "\n")
+          .replace(/\\hline\n/g, "\n")
+          .replace(/\n\\hline/g, "\n")
+          .replace(/\\hline/g, "\n")
           .replace(/\n/g, "\n\\hline\n")
           .replace(/\n(\d+)/g, "\n $1");
 
@@ -33,7 +36,6 @@ export const formatTableContent = (input: string): string => {
       const count = parseInt(num) - 1;
       return "& ".repeat(count);
     })
-
     .replace("{List I}", "List I")
     .replace("{List II}", "List II");
 };
