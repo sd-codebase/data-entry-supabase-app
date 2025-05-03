@@ -37,53 +37,60 @@ export default function RootLayout({
           <RefineKbarProvider>
             <AntdRegistry>
               <ColorModeContextProvider defaultMode={defaultMode}>
-                <DevtoolsProvider>
-                  <Refine
-                    routerProvider={routerProvider}
-                    authProvider={authProviderClient}
-                    dataProvider={dataProvider}
-                    notificationProvider={useNotificationProvider}
-                    resources={[
-                      {
-                        name: "format-solutions",
-                        list: "/solutions",
-                        meta: {
-                          canDelete: true,
-                        },
+                {/* <DevtoolsProvider> */}
+                <Refine
+                  routerProvider={routerProvider}
+                  authProvider={authProviderClient}
+                  dataProvider={dataProvider}
+                  notificationProvider={useNotificationProvider}
+                  resources={[
+                    {
+                      name: "format-solutions",
+                      list: "/solutions",
+                      meta: {
+                        canDelete: true,
                       },
-                      {
-                        name: "format-sections",
-                        list: "/formatter",
-                        meta: {
-                          canDelete: true,
-                        },
+                    },
+                    {
+                      name: "format-sections",
+                      list: "/formatter",
+                      meta: {
+                        canDelete: true,
                       },
-                      {
-                        name: "questions",
-                        list: "/questions",
-                        meta: {
-                          canDelete: true,
-                        },
+                    },
+                    {
+                      name: "chapter-questions",
+                      list: "/chapter-questions",
+                      meta: {
+                        canDelete: true,
                       },
-                      {
-                        name: "questions-list",
-                        list: "/questions-list",
-                        meta: {
-                          canDelete: true,
-                        },
+                    },
+                    {
+                      name: "questions",
+                      list: "/questions",
+                      meta: {
+                        canDelete: true,
                       },
-                    ]}
-                    options={{
-                      syncWithLocation: true,
-                      warnWhenUnsavedChanges: true,
-                      useNewQueryKeys: true,
-                      projectId: "jDA0bF-uz4ytg-hbWCCH",
-                    }}
-                  >
-                    {children}
-                    <RefineKbar />
-                  </Refine>
-                </DevtoolsProvider>
+                    },
+                    {
+                      name: "questions-list",
+                      list: "/questions-list",
+                      meta: {
+                        canDelete: true,
+                      },
+                    },
+                  ]}
+                  options={{
+                    syncWithLocation: true,
+                    warnWhenUnsavedChanges: true,
+                    useNewQueryKeys: true,
+                    projectId: "jDA0bF-uz4ytg-hbWCCH",
+                  }}
+                >
+                  {children}
+                  <RefineKbar />
+                </Refine>
+                {/* </DevtoolsProvider> */}
               </ColorModeContextProvider>
             </AntdRegistry>
           </RefineKbarProvider>

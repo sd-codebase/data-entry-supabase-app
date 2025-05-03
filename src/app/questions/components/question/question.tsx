@@ -91,6 +91,9 @@ export const Question = ({
     if (!data.hasIntegerAnswer) {
       data.options = { a: "", b: "", c: "", d: "", ...data.options };
     }
+    if (!data?.solutions?.length) {
+      data.solutions = [""];
+    }
     return data;
   };
 

@@ -18,7 +18,8 @@ const optionNumbers: any = {
   4: "d",
 };
 
-const QuestionComponent: React.FC = () => {
+const QuestionComponent = (props: any) => {
+  const { questionsList, answersList, filterItem, noFilters } = props;
   const [questionText, setQuestionText] = useState("");
   const [solutionText, setSolutionText] = useState("");
   const [questions, setQuestions] = useState<Record<string, any>[]>([]);
@@ -30,8 +31,19 @@ const QuestionComponent: React.FC = () => {
   const questionBlockStartFinder = /\n(\d+)/g;
   const questionStartFinder = /\n(\d+)/g;
   const pyoFinder = /\n\[/g;
-  const optionsStartFinder = /\n\(1\) |\n\(a\) |\n\(a\)\n|\n\(A\)\s/g;
+  const optionsStartFinder = /\n\(a\) |\n\(a\)\n\s/g;
   const optionsFinder = /\n\([a-h]\)\s/g;
+
+  useEffect(() => {
+    console.log(filterItem);
+    if (questionsList && answersList && filterItem) {
+      setFilters(filterItem);
+      setQuestionText(questionsList?.replaceAll("[0pt]", ""));
+      solutionTextChange(
+        answersList?.replaceAll("[0pt]", "").replace(/\n(\d+ )/g, "\n $1")
+      );
+    }
+  }, [questionsList, answersList, filterItem]);
 
   useEffect(() => {
     if (filters?.topic?.id) {
@@ -115,52 +127,88 @@ const QuestionComponent: React.FC = () => {
   }
 
   function transformSections(input: string) {
-    return input
-      .replace(
-        /\\begin{aligned}([\s\S]+?)\\end{aligned}/g,
-        (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
-        }
-      )
-      .replace(
-        /\\begin{align\*}([\s\S]+?)\\end{align\*}/g,
-        (match, content) => {
-          return `$$\n${match.trim().replaceAll("\n", " \\\\\n")} \n$$`;
-        }
-      )
-      .replace(/\\begin{array}([\s\S]+?)\\end{array}/g, (match, content) => {
-        return match.trim().replaceAll("\n", " \\\\\n");
-      })
-      .replace(
-        /\\begin{array\*}([\s\S]+?)\\end{array\*}/g,
-        (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
-        }
-      )
-      .replace(
-        /\\begin{equation}([\s\S]+?)\\end{equation}/g,
-        (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
-        }
-      )
-      .replace(
-        /\\begin{equation\*}([\s\S]+?)\\end{equation\*}/g,
-        (match, content) => {
-          return `$$\n ${match.trim().replaceAll("\n", " \\\\\n")} \n$$`;
-        }
-      )
-      .replace(
-        /\\begin{gathered}([\s\S]+?)\\end{gathered}/g,
-        (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
-        }
-      )
-      .replace(
-        /\\begin{gather\*}([\s\S]+?)\\end{gather\*}/g,
-        (match, content) => {
-          return match.trim().replaceAll("\n", " \\\\\n");
-        }
-      );
+    return (
+      input
+        .replace(
+          /\\begin{aligned}([\s\S]+?)\\end{aligned}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{aligned}${updatedContent}\\end{aligned}`.replace(
+              "\\begin{aligned} \\\\",
+              "\\begin{aligned}"
+            );
+          }
+        )
+        .replace(
+          /\\begin{align\*}([\s\S]+?)\\end{align\*}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{align*}${updatedContent}\\end{align*}`.replace(
+              "\\begin{align*} \\\\",
+              "\\begin{align*}"
+            );
+          }
+        )
+        .replace(/\\begin{array}([\s\S]+?)\\end{array}/g, (match, content) => {
+          const updatedContent = content.replace(/\n/g, " \\\\\n");
+          return `\\begin{array}${updatedContent}\\end{array}`.replace(
+            "\\begin{array} \\\\",
+            "\\begin{array}"
+          );
+        })
+        .replace(
+          /\\begin{array\*}([\s\S]+?)\\end{array\*}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{array\*}${updatedContent}\\end{array\*}`.replace(
+              "\\begin{array*} \\\\",
+              "\\begin{array*}"
+            );
+          }
+        )
+        .replace(
+          /\\begin{equation}([\s\S]+?)\\end{equation}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{equation}${updatedContent}\\end{equation}`.replace(
+              "\\begin{equation} \\\\",
+              "\\begin{equation}"
+            );
+          }
+        )
+        .replace(
+          /\\begin{equation\*}([\s\S]+?)\\end{equation\*}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{equation\*}${updatedContent}\\end{equation\*}`.replace(
+              "\\begin{equation*} \\\\",
+              "\\begin{equation*}"
+            );
+          }
+        )
+        .replace(
+          /\\begin{gathered}([\s\S]+?)\\end{gathered}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{gathered}${updatedContent}\\end{gathered}`.replace(
+              "\\begin{gathered} \\\\",
+              "\\begin{gathered}"
+            );
+          }
+        )
+        .replace(
+          /\\begin{gather\*}([\s\S]+?)\\end{gather\*}/g,
+          (match, content) => {
+            const updatedContent = content.replace(/\n/g, " \\\\\n");
+            return `\\begin{gather\*}${updatedContent}\\end{gather\*}`.replace(
+              "\\begin{gathered*} \\\\",
+              "\\begin{gathered*}"
+            );
+          }
+        )
+        // replace $$$$ with $$
+        .replace(/\$\$\n\$\$/g, "$$")
+    );
   }
 
   const transformQuestionText = () => {
@@ -193,8 +241,8 @@ const QuestionComponent: React.FC = () => {
       const transformedSections = transformSections(transformedQuestionNo);
       const optsTransformed = transformAllOptSections(transformedSections);
       console.log({ optsTransformed });
-      const tableRegex =
-        /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
+      // const tableRegex =
+      //   /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
       let transformedText = optsTransformed
         .replace(
           questionBlockStartFinder,
@@ -331,6 +379,8 @@ const QuestionComponent: React.FC = () => {
           });
         }
       )
+      .replace(/\\begin{enumerate}\s+\\item/g, "01.")
+      .replace(/\\end{enumerate}/g, "")
       .replace(/\\begin{center}/g, "")
       .replace(/\\end{center}/g, "");
   };
@@ -343,22 +393,20 @@ const QuestionComponent: React.FC = () => {
       );
       const regex2 = /^.*\\section.*$/gm;
       const removedSectionsLine = soltext.replace(regex2, "");
-      const transformedSections = transformSections(removedSectionsLine);
-      const tableRegex =
-        /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
-      let transformedText = transformedSections
+      // const transformedSections = transformSections(removedSectionsLine);
+      // console.log({ transformedSections });
+      // const tableRegex =
+      //   /\\begin{center}\s*\\begin{tabular}\s*\\hline\n([\s\S]*?)\n\\hline\s*\\end{tabular}\s*\\end{center}/g;
+      let transformedText = formatTableContent(removedSectionsLine);
+      transformedText = transformedText
         .replace(
           /\n(\d+).\s/g,
           (match, number) => `\n{{SB}}${number} \n{{Ans}}\n`
         )
         .replace(/\n\(\S+\)\s/g, "$&\n{{Sol}} ")
-        .replace(/\\includegraphics\[.*?\]\{(.*?)\}/g, "{{img_$1.jpg_img}}")
-        .replace(
-          /\\includetblgraphics\[.*?\]\{(.*?)\}/g,
-          "{{imgcell_$1.jpg_imgcell}}"
-        );
+        .replace(/\\includegraphics\[.*?\]\{(.*?)\}/g, "{{img_$1.jpg_img}}");
       // .replace(tableRegex, "{{table_$1_table}}");
-      transformedText = formatTableContent(transformedText);
+      // transformedText = formatTableContent(transformedText);
       // replace \n + number + space with \n + number + . + space
       transformedText = transformedText.replace(
         /(\n)(\d+)\s/g,
@@ -366,7 +414,9 @@ const QuestionComponent: React.FC = () => {
           return `${p1}${p2}. `;
         }
       );
-      transformedText = transformedText.replace(/\n(\d+ )/g, "\n $1");
+      // transformedText = transformedText.replace(/\n(\d+ )/g, "\n $1");
+      transformedText = transformSections(transformedText);
+      console.log({ transformedText });
 
       const answersList = transformedText.split(`{{SB}}`).slice(1);
       const answers = {} as any;
@@ -430,11 +480,8 @@ const QuestionComponent: React.FC = () => {
     }
   };
 
-  const handleSolutionTextChange = (
-    event: React.ChangeEvent<HTMLTextAreaElement>
-  ) => {
-    let data = event.target.value?.replaceAll("[0pt]", "");
-    data = transformEnumerators(data);
+  const solutionTextChange = (text: string) => {
+    const data = transformEnumerators(text);
 
     // // replace \n + number + space with \n + number + . + space
     // data = data.replace(/(\n)(\d+)\s/g, (match, p1, p2) => {
@@ -444,6 +491,13 @@ const QuestionComponent: React.FC = () => {
 
     console.log(data);
     setSolutionText(data);
+  };
+
+  const handleSolutionTextChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>
+  ) => {
+    let data = event.target.value?.replaceAll("[0pt]", "");
+    solutionTextChange(data);
   };
 
   const handleFilterSubmit = (values: Record<string, any>) => {
@@ -464,9 +518,11 @@ const QuestionComponent: React.FC = () => {
   return (
     <>
       <Flex gap={24} vertical>
-        <DropdownFilters handleFilterSubmit={handleFilterSubmit} />
+        {noFilters ? null : (
+          <DropdownFilters handleFilterSubmit={handleFilterSubmit} />
+        )}
         <Flex gap={12}>
-          <Flex vertical gap={12} style={{ width: "40rem" }}>
+          <Flex vertical gap={12} style={{ flex: 1 }}>
             <TextArea
               value={questionText}
               onChange={handleQuestionTextChange}
@@ -479,7 +535,7 @@ const QuestionComponent: React.FC = () => {
               }}
             />
           </Flex>
-          <Flex vertical gap={12} style={{ width: "40rem" }}>
+          <Flex vertical gap={12} style={{ flex: 1 }}>
             <TextArea
               value={solutionText}
               onChange={handleSolutionTextChange}
@@ -492,7 +548,7 @@ const QuestionComponent: React.FC = () => {
               }}
             />
           </Flex>
-          <Flex vertical gap={12}>
+          <Flex vertical gap={12} style={{ width: "15rem" }}>
             <Title level={5}>Topic: {filters?.topic?.name}</Title>
             <Button
               type="primary"
