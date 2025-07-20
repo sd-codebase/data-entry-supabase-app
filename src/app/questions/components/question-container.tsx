@@ -38,7 +38,8 @@ const QuestionComponent = (props: any) => {
     console.log(filterItem);
     if (questionsList && answersList && filterItem) {
       setFilters(filterItem);
-      setQuestionText(questionsList?.replaceAll("[0pt]", ""));
+      const questions = transformEnumerators(questionsList);
+      setQuestionText(questions?.replaceAll("[0pt]", ""));
       solutionTextChange(
         answersList?.replaceAll("[0pt]", "").replace(/\n(\d+ )/g, "\n $1")
       );
@@ -254,6 +255,7 @@ const QuestionComponent = (props: any) => {
         .replace(optionsFinder, `\n{{OP}} `)
         .replaceAll("$\\qquad$", " {{INTEGER_ANSWER}} ")
         .replace(/\\includegraphics\[.*?\]\{(.*?)\}/g, "{{img_$1.jpg_img}}")
+        .replace(/\\includegraphics\{smile-(.*?)\}/g, "{{img_$1.jpg_img}}")
         .replace(
           /\\includetblgraphics\[.*?\]\{(.*?)\}/g,
           "{{imgcell_$1.jpg_imgcell}}"
@@ -404,7 +406,9 @@ const QuestionComponent = (props: any) => {
           (match, number) => `\n{{SB}}${number} \n{{Ans}}\n`
         )
         .replace(/\n\(\S+\)\s/g, "$&\n{{Sol}} ")
-        .replace(/\\includegraphics\[.*?\]\{(.*?)\}/g, "{{img_$1.jpg_img}}");
+        .replace(/\\includegraphics\[.*?\]\{(.*?)\}/g, "{{img_$1.jpg_img}}")
+        .replace(/\\includegraphics\{smile-(.*?)\}/g, "{{img_$1.jpg_img}}");
+
       // .replace(tableRegex, "{{table_$1_table}}");
       // transformedText = formatTableContent(transformedText);
       // replace \n + number + space with \n + number + . + space
@@ -549,7 +553,9 @@ const QuestionComponent = (props: any) => {
             />
           </Flex>
           <Flex vertical gap={12} style={{ width: "15rem" }}>
-            <Title level={5}>Topic: {filters?.topic?.name}</Title>
+            <Title level={5}>
+              Topic {filters?.topic?.order}: {filters?.topic?.name}
+            </Title>
             <Button
               type="primary"
               disabled={!solutionText.length || !questionText.length}

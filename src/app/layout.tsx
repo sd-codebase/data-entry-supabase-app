@@ -12,6 +12,13 @@ import { ColorModeContextProvider } from "@contexts/color-mode";
 import { authProviderClient } from "@providers/auth-provider/auth-provider.client";
 import { dataProvider } from "@providers/data-provider";
 import "@refinedev/antd/dist/reset.css";
+import {
+  CheckOutlined,
+  FileDoneOutlined,
+  LayoutOutlined,
+  ProfileOutlined,
+  TableOutlined,
+} from "@ant-design/icons";
 
 export const metadata: Metadata = {
   title: "Fast capture",
@@ -49,6 +56,7 @@ export default function RootLayout({
                       list: "/solutions",
                       meta: {
                         canDelete: true,
+                        icon: <CheckOutlined />,
                       },
                     },
                     {
@@ -56,6 +64,7 @@ export default function RootLayout({
                       list: "/formatter",
                       meta: {
                         canDelete: true,
+                        icon: <TableOutlined />,
                       },
                     },
                     {
@@ -63,6 +72,7 @@ export default function RootLayout({
                       list: "/chapter-questions",
                       meta: {
                         canDelete: true,
+                        icon: <LayoutOutlined />,
                       },
                     },
                     {
@@ -70,6 +80,7 @@ export default function RootLayout({
                       list: "/questions",
                       meta: {
                         canDelete: true,
+                        icon: <FileDoneOutlined />,
                       },
                     },
                     {
@@ -77,6 +88,7 @@ export default function RootLayout({
                       list: "/questions-list",
                       meta: {
                         canDelete: true,
+                        icon: <ProfileOutlined />,
                       },
                     },
                   ]}

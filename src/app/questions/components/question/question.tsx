@@ -304,7 +304,7 @@ export const Question = ({
                 onChange={(e) => updateQuestion(e.target.value, "answer")}
               />
 
-              {que?.solutions?.length
+              {/* {que?.solutions?.length
                 ? que?.solutions.map((solution: string, index: number) => (
                     <TextArea
                       key={index}
@@ -315,7 +315,7 @@ export const Question = ({
                       }
                     />
                   ))
-                : null}
+                : null} */}
             </Flex>
           ) : null}
           <Flex vertical style={{ flex: 1 }}>
@@ -338,15 +338,15 @@ export const Question = ({
               </>
             ) : null}
             <Title level={5}>Answer: {que.answer}</Title>
-            <Title level={5}>Solution: </Title>
-            {que.solutions?.map((solution: any, index: number) => (
+            {/* <Title level={5}>Solution: </Title> */}
+            {/* {que.solutions?.map((solution: any, index: number) => (
               <div key={index}>
                 {index === 1 && solution?.trim() ? (
                   <Title level={5}>Alternate Solution: </Title>
                 ) : null}
                 <MathExpression exp={solution} />
               </div>
-            ))}
+            ))} */}
           </Flex>
         </Flex>
       </Card>

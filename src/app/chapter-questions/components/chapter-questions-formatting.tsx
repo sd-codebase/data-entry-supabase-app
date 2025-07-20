@@ -17,6 +17,7 @@ export const ChapterQuestionsFormatting = () => {
   const handleFilterSubmit = (values: Record<string, any>) => {
     console.log(values);
     if (values?.topics?.length > 0) {
+      console.log(values?.topics?.sort((a: any, b: any) => a.order - b.order));
       setFilters(values);
       setTopics(values?.topics);
     } else {
