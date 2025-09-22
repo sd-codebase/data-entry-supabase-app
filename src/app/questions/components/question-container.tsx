@@ -329,7 +329,7 @@ const QuestionComponent = (props: any) => {
 
         // add intege answer if no integer answer or options exists
         if (
-          !questionTextPart.includes(` {{INTEGER_ANSWER}} `) &&
+          !questionTextPart.includes(` {{INTEGER_ANSWER}}`) &&
           !questionParts[3]?.includes(`\n{{OP}}`)
         ) {
           questionTextPart = `${questionTextPart} {{INTEGER_ANSWER}} `;
