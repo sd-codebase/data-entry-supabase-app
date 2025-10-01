@@ -9,6 +9,7 @@ import {
   Space,
   Typography,
 } from "antd";
+import TextArea from "antd/es/input/TextArea";
 import React, { useEffect } from "react";
 
 type QuestionsListInfoPropsType = {
@@ -30,11 +31,28 @@ export const QuestionsListInfo = ({
   });
   const [missingQuestions, setMissingQuestions] = React.useState<number[]>([]);
   const [repeatQuestions, setRepeatQuestions] = React.useState<number[]>([]);
-  const [questionsWithLevels, setQuestionsWithLevels] = React.useState<
-    number[]
-  >([]);
+  const [questionsWithLevels, setQuestionsWithLevels] =
+    React.useState<string>("");
   const [showAnswers, setShowAnswers] = React.useState(false);
   const [showLevels, setShowLevels] = React.useState(false);
+  const [initialLevels, setInitialLevels] = React.useState({
+    l1: "",
+    l2: "",
+    l3: "",
+  });
+
+  const [form] = Form.useForm();
+
+  useEffect(() => {
+    if (!questionsWithLevels) {
+      return;
+    }
+
+    const levels = questionsWithLevels.split(", \n");
+    levels.forEach((level, index) => {
+      form.setFieldValue(`l${index + 1}`, level.trim());
+    });
+  }, [questionsWithLevels]);
 
   useEffect(() => {
     if (questions.length === 0) {
@@ -90,7 +108,7 @@ export const QuestionsListInfo = ({
       .map((item) => {
         return Number(item.srNo);
       });
-    setQuestionsWithLevels(questionsWithLevels);
+    setQuestionsWithLevels(questionsWithLevels.join(", "));
   }, [questions]);
 
   const handleFinish = async (values: any) => {
@@ -135,6 +153,9 @@ export const QuestionsListInfo = ({
       }
 
       message.success("Levels updated successfully");
+      setShowLevels(false);
+      setInitialLevels({ l1: "", l2: "", l3: "" });
+      form.resetFields();
     } catch (error) {
       console.error("Error updating levels:", error);
       message.error("Failed to update levels");
@@ -178,7 +199,14 @@ export const QuestionsListInfo = ({
           <Button onClick={() => setShowAnswers(true)}>Answers</Button>
         </Space>
         <Space direction="vertical">
-          <Button onClick={() => setShowLevels(true)}>Levels</Button>
+          <Button
+            onClick={() => {
+              setShowLevels(true);
+              setInitialLevels({ l1: "", l2: "", l3: "" });
+            }}
+          >
+            Levels
+          </Button>
         </Space>
         <Modal
           title="Answers"
@@ -187,11 +215,15 @@ export const QuestionsListInfo = ({
           footer={null}
           width={"80vw"}
         >
-          <Flex wrap={"wrap"} gap={16}>
+          <Flex wrap gap={16} style={{ paddingBottom: 300 }}>
             {questions.map((question, index) => {
               return (
-                <Flex key={index}>
-                  <Text style={{ fontSize: 16 }}>
+                <Flex justify="end" key={index} style={{ minWidth: 100 }}>
+                  <Text
+                    style={{
+                      fontSize: 24,
+                    }}
+                  >
                     {question.srNo} ({question.answer})
                   </Text>
                 </Flex>
@@ -199,40 +231,52 @@ export const QuestionsListInfo = ({
             })}
           </Flex>
         </Modal>
-        <Modal
-          title="Levels"
-          open={showLevels}
-          onCancel={() => setShowLevels(false)}
-          footer={null}
-          width={"80vw"}
-        >
-          <Flex vertical>
-            <Text>
-              Questions with Levels are:{" "}
-              <Text strong style={{ fontSize: 18 }}>
-                {questionsWithLevels.join(", ")}
-              </Text>
-            </Text>
+        {showLevels && (
+          <Modal
+            title="Levels"
+            open={showLevels}
+            onCancel={() => {
+              setShowLevels(false);
+              setInitialLevels({ l1: "", l2: "", l3: "" });
+            }}
+            footer={null}
+            width={"80vw"}
+          >
             <Flex vertical>
-              <Form onFinish={handleFinish}>
-                <Flex vertical gap={16}>
-                  <Form.Item label="L1" name="l1">
-                    <Input />
-                  </Form.Item>
-                  <Form.Item label="L2" name="l2">
-                    <Input />
-                  </Form.Item>
-                  <Form.Item label="L3" name="l3">
-                    <Input />
-                  </Form.Item>
-                </Flex>
-                <Button type="primary" htmlType="submit">
-                  Update Levels
-                </Button>
-              </Form>
+              <Text>
+                Questions with Levels are:{" "}
+                <Input.TextArea
+                  rows={4}
+                  style={{ fontSize: 16, marginBottom: 16 }}
+                  value={questionsWithLevels}
+                  onChange={(e) => setQuestionsWithLevels(e.target.value)}
+                />
+              </Text>
+              <Flex vertical>
+                <Form
+                  form={form}
+                  onFinish={handleFinish}
+                  initialValues={initialLevels}
+                >
+                  <Flex vertical gap={16}>
+                    <Form.Item label="L1" name="l1">
+                      <Input />
+                    </Form.Item>
+                    <Form.Item label="L2" name="l2">
+                      <Input />
+                    </Form.Item>
+                    <Form.Item label="L3" name="l3">
+                      <Input />
+                    </Form.Item>
+                  </Flex>
+                  <Button type="primary" htmlType="submit">
+                    Update Levels
+                  </Button>
+                </Form>
+              </Flex>
             </Flex>
-          </Flex>
-        </Modal>
+          </Modal>
+        )}
       </Flex>
     </>
   );

@@ -200,17 +200,17 @@ export const Question = ({
                     >
                       <ReloadOutlined />
                     </Button>
-                    <Button
+                    {/* <Button
                       color={que.reviewInApp === true ? "green" : "default"}
                       variant="solid"
                       onClick={() => updateQuestion(true, "reviewInApp")}
                     >
                       View In App
-                    </Button>
+                    </Button> */}
                   </>
                 ) : null}
 
-                <Button
+                {/* <Button
                   color={que.isMarkedForReview === true ? "yellow" : "default"}
                   variant="solid"
                   onClick={() => updateQuestion(true, "isMarkedForReview")}
@@ -245,7 +245,16 @@ export const Question = ({
                   onClick={() => updateQuestion(3, "level")}
                 >
                   L3
+                </Button> */}
+
+                <Button
+                  color={"green"}
+                  variant="solid"
+                  // onClick={() => updateQuestion(3, "level")}
+                >
+                  L{que.level || 0}
                 </Button>
+
                 <Button
                   color={isPending ? "orange" : "green"}
                   variant="solid"
