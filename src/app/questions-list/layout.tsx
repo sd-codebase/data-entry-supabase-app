@@ -1,3 +1,4 @@
+import { AppTitle } from "@components/app-title";
 import { Header } from "@components/header";
 import { authProviderServer } from "@providers/auth-provider/auth-provider.server";
 import { ThemedLayoutV2 } from "@refinedev/antd";
@@ -11,7 +12,7 @@ export default async function Layout({ children }: React.PropsWithChildren) {
     return redirect(data?.redirectTo || "/login");
   }
 
-  return <ThemedLayoutV2 Header={Header}>{children}</ThemedLayoutV2>;
+  return <ThemedLayoutV2 Header={Header} Title={AppTitle}>{children}</ThemedLayoutV2>;
 }
 
 async function getData() {
