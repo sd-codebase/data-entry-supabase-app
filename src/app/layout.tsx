@@ -14,6 +14,7 @@ import { dataProvider } from "@providers/data-provider";
 import "@refinedev/antd/dist/reset.css";
 import {
   CheckOutlined,
+  DatabaseOutlined,
   FileDoneOutlined,
   LayoutOutlined,
   ProfileOutlined,
@@ -89,6 +90,14 @@ export default function RootLayout({
                       meta: {
                         canDelete: true,
                         icon: <ProfileOutlined />,
+                      },
+                    },
+                    {
+                      name: "bulk-topics",
+                      list: "/bulk-topics",
+                      meta: {
+                        canDelete: false,
+                        icon: <DatabaseOutlined />,
                       },
                     },
                   ]}
