@@ -16,6 +16,7 @@ import {
   CheckOutlined,
   DatabaseOutlined,
   FileDoneOutlined,
+  FormOutlined,
   LayoutOutlined,
   ProfileOutlined,
   TableOutlined,
@@ -98,6 +99,14 @@ export default function RootLayout({
                       meta: {
                         canDelete: false,
                         icon: <DatabaseOutlined />,
+                      },
+                    },
+                    {
+                      name: "neet-chapter-questions",
+                      list: "/neet-chapter-questions",
+                      meta: {
+                        canDelete: false,
+                        icon: <FormOutlined />,
                       },
                     },
                   ]}
