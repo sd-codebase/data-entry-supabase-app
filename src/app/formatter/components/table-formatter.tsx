@@ -23,6 +23,14 @@ export default function TableFormatter() {
     }
   }, [input]);
 
+  // Remove consecutive \hline (same line or multiple lines), keep only one
+  useEffect(() => {
+    const consecutiveHlinePattern = /\\hline(\s*\\hline)+/g;
+    if (consecutiveHlinePattern.test(output)) {
+      setOutput(output.replace(consecutiveHlinePattern, "\\hline"));
+    }
+  }, [output]);
+
   const handleCopy = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -42,9 +50,9 @@ export default function TableFormatter() {
     let text = input;
 
     // Find all \begin{tabular}{...} matches
-    const beginMatches = [...text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g)];
+    const beginMatches = Array.from(text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g));
     // Find all \end{tabular} matches
-    const endMatches = [...text.matchAll(/\\end\{tabular\}/g)];
+    const endMatches = Array.from(text.matchAll(/\\end\{tabular\}/g));
 
     if (beginMatches.length <= 1 && endMatches.length <= 1) {
       messageApi.info("No inner tabular tags to remove");
@@ -58,7 +66,7 @@ export default function TableFormatter() {
     }
 
     // Remove inner \begin{tabular} (all except first) - recalculate matches after previous removals
-    const newBeginMatches = [...text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g)];
+    const newBeginMatches = Array.from(text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g));
     for (let i = newBeginMatches.length - 1; i >= 1; i--) {
       const match = newBeginMatches[i];
       text = text.slice(0, match.index) + text.slice(match.index! + match[0].length);

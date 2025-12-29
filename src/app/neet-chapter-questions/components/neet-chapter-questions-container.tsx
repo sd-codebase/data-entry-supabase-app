@@ -162,6 +162,8 @@ export default function NeetChapterQuestionsContainer() {
     formatted = formatted.replace(/\n\((\d)/g, "\nPYO - ($1");
     // \n[MR -> \nPYO - [MR
     formatted = formatted.replace(/\n\[MR /g, "\nPYO - [MR ");
+    // \n + optional spaces + [MR or [OS + anything -> \nPYO - [MR... or \nPYO - [OS...
+    formatted = formatted.replace(/\n\s*(\[(?:MR|OS)[^\n]*)/g, "\nPYO - $1");
 
     // Add 'OPT' prefix before option 'a.'
     // \na. -> \nOPT\na.
