@@ -109,6 +109,12 @@ export default function NeetChapterQuestionsContainer() {
       (_, name) => `{{img_${addExtension(name.trim())}_img}}`
     );
 
+    // Replace \includegraphics{name} (without brackets) with {{img_name.jpg_img}}
+    formatted = formatted.replace(
+      /\\includegraphics\{([^}]+)\}/g,
+      (_, name) => `{{img_${addExtension(name.trim())}_img}}`
+    );
+
     // Replace https://cdn.mathpix.com/cropped/name?... with {{img_name.jpg_img}}
     formatted = formatted.replace(
       /\\texttt\{https:\/\/cdn\.mathpix\.com\/cropped\/([^?]+)\?[^}]*\}/g,
@@ -325,12 +331,14 @@ export default function NeetChapterQuestionsContainer() {
     const mainContent = answerKeySplit[0];
     const answerKeyContent = answerKeySplit[1] || "";
 
-    // 2. Parse answers from Answer Key: "1. (c)" -> { 1: "c" }
+    // 2. Parse answers from Answer Key: "1. (c)", "1. (a,b)", "1. (None)", "1.(c, d)" -> { 1: "c" }, { 1: "a,b" }, { 1: "None" }, { 1: "c, d" }
     const answers: Record<number, string> = {};
-    const answerRegex = /(\d+)\.\s*\(([a-d])\)/g;
+    const answerRegex = /(\d+)\s*\.\s*\(([^)]+)\)/g;
     let answerMatch;
     while ((answerMatch = answerRegex.exec(answerKeyContent)) !== null) {
-      answers[parseInt(answerMatch[1], 10)] = answerMatch[2];
+      // Normalize answer: remove extra spaces, keep commas
+      const answer = answerMatch[2].trim().replace(/\s+/g, " ");
+      answers[parseInt(answerMatch[1], 10)] = answer;
     }
 
     // 3. Find all sections with their positions
@@ -499,10 +507,16 @@ export default function NeetChapterQuestionsContainer() {
       const content = figureBlockMatch[2].trim();
 
       // Extract image name from content
-      // Check for includegraphics
+      // Check for includegraphics with brackets
       const includeMatch = content.match(/\\includegraphics\[[^\]]*\]\{([^}]+)\}/);
       if (includeMatch) {
         return { caption, imageName: includeMatch[1].trim() };
+      }
+
+      // Check for includegraphics without brackets
+      const includeNoBracketMatch = content.match(/\\includegraphics\{([^}]+)\}/);
+      if (includeNoBracketMatch) {
+        return { caption, imageName: includeNoBracketMatch[1].trim() };
       }
 
       // Check for mathpix URL in \texttt{}
@@ -531,6 +545,12 @@ export default function NeetChapterQuestionsContainer() {
     const includeGraphicsMatch = text.match(/\\includegraphics\[.*?\]\{([^}]+)\}/);
     if (includeGraphicsMatch) {
       return { caption: "", imageName: includeGraphicsMatch[1].trim() };
+    }
+
+    // Check if text matches \includegraphics{<name>} pattern (without brackets)
+    const includeGraphicsNoBracketMatch = text.match(/\\includegraphics\{([^}]+)\}/);
+    if (includeGraphicsNoBracketMatch) {
+      return { caption: "", imageName: includeGraphicsNoBracketMatch[1].trim() };
     }
 
     // Check if text matches https://cdn.mathpix.com/cropped/<name>?... pattern
@@ -779,6 +799,32 @@ export default function NeetChapterQuestionsContainer() {
     }, 0);
 
     message.success("OPT inserted");
+  };
+
+  const handleOptAbcdAction = () => {
+    const textareaComponent = outputTextAreaRef.current;
+    if (!textareaComponent) return;
+
+    const textarea = textareaComponent.resizableTextArea?.textArea || textareaComponent;
+    if (!textarea) return;
+
+    const cursorPos = textarea.selectionStart;
+    const scrollTop = textarea.scrollTop;
+
+    // Insert OPT block with placeholder options
+    const insertText = "\nOPT\na. a\nb. b\nc. c\nd. d";
+    const newText =
+      outputText.substring(0, cursorPos) + insertText + outputText.substring(cursorPos);
+    setOutputText(newText);
+
+    setTimeout(() => {
+      textarea.focus();
+      textarea.scrollTop = scrollTop;
+      const newCursorPos = cursorPos + insertText.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+    }, 0);
+
+    message.success("OPT abcd inserted");
   };
 
   const scrollToQuestion = (questionNum: number) => {
@@ -1220,6 +1266,14 @@ export default function NeetChapterQuestionsContainer() {
       <Card
         title="Output"
         size="small"
+        styles={{
+          header: {
+            position: "sticky",
+            top: 0,
+            zIndex: 10,
+            backgroundColor: "var(--ant-color-bg-container)",
+          },
+        }}
         extra={
           <Flex vertical gap={4}>
             <Flex gap={4} justify="flex-end">
@@ -1287,6 +1341,13 @@ export default function NeetChapterQuestionsContainer() {
                 title="Insert OPT at cursor"
               >
                 OPT
+              </Button>
+              <Button
+                onClick={handleOptAbcdAction}
+                size="small"
+                title="Insert OPT with placeholder options"
+              >
+                OPT+
               </Button>
               <Button
                 onClick={handleMrAction}
