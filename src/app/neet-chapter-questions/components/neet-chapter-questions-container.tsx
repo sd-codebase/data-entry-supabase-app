@@ -157,6 +157,13 @@ export default function NeetChapterQuestionsContainer() {
       "[MR * ] ($1)"
     );
 
+    // Replace \href{name1}{name2} with [name2] (name1)
+    // e.g., \href{2015}{OS} -> [OS] (2015)
+    formatted = formatted.replace(
+      /\\href\{([^}]+)\}\{([^}]+)\}/g,
+      "[$2] ($1)"
+    );
+
     // Add 'PYO - ' prefix before year patterns and MR patterns
     // \n(YEAR) -> \nPYO - (YEAR)
     formatted = formatted.replace(/\n\((\d)/g, "\nPYO - ($1");

@@ -23,11 +23,24 @@ export default function TableFormatter() {
     }
   }, [input]);
 
-  // Remove consecutive \hline (same line or multiple lines), keep only one
+  // Clean up output: remove empty lines and consecutive \hline
   useEffect(() => {
-    const consecutiveHlinePattern = /\\hline(\s*\\hline)+/g;
-    if (consecutiveHlinePattern.test(output)) {
-      setOutput(output.replace(consecutiveHlinePattern, "\\hline"));
+    let cleaned = output;
+
+    // Remove empty lines (lines with only whitespace)
+    const emptyLinesPattern = /^\s*$/gm;
+    // Remove newlines between \hline commands, keep only one \hline
+    const hlineWithNewlinesPattern = /\\hline(\s*\\hline)+/g;
+
+    const hasEmptyLines = emptyLinesPattern.test(cleaned);
+    const hasConsecutiveHline = hlineWithNewlinesPattern.test(cleaned);
+
+    if (hasEmptyLines || hasConsecutiveHline) {
+      // Remove empty lines
+      cleaned = cleaned.replace(/^\s*\n/gm, "");
+      // Remove consecutive \hline (including newlines between them)
+      cleaned = cleaned.replace(/\\hline(\s*\\hline)+/g, "\\hline");
+      setOutput(cleaned);
     }
   }, [output]);
 
