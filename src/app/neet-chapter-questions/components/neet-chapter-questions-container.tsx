@@ -1,8 +1,8 @@
 "use client";
 
 import DropdownFilters from "@components/dropdown-filters/dropdown-filters";
-import { AimOutlined, CheckCircleOutlined, CopyOutlined, ExclamationCircleOutlined, EyeInvisibleOutlined, EyeOutlined, FileTextOutlined, FormatPainterOutlined, LinkOutlined, PictureOutlined, PlusOutlined, SaveOutlined, SearchOutlined, WarningOutlined } from "@ant-design/icons";
-import { Button, Card, Flex, Input, message, Tag, Typography } from "antd";
+import { AimOutlined, CheckCircleOutlined, CopyOutlined, EditOutlined, ExclamationCircleOutlined, EyeInvisibleOutlined, EyeOutlined, FileTextOutlined, FormatPainterOutlined, LinkOutlined, PictureOutlined, PlusOutlined, SaveOutlined, SearchOutlined, WarningOutlined } from "@ant-design/icons";
+import { Button, Card, Dropdown, Flex, Input, message, Tag, Typography } from "antd";
 import { useRef, useState } from "react";
 import { supabaseBrowserClient } from "@utils/supabase/client";
 
@@ -1154,6 +1154,32 @@ export default function NeetChapterQuestionsContainer() {
     }
   };
 
+  const handleUpdateTopic = async (topicId: string, newName: string) => {
+    try {
+      const { data, error } = await supabaseBrowserClient
+        .from("topics")
+        .update({ name: newName })
+        .eq("id", topicId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error(error);
+        message.error(error.message || "Error updating topic");
+        return;
+      }
+
+      // Update the local topics list
+      setTopics((prev) =>
+        prev.map((t) => (t.id === topicId ? { ...t, name: newName } : t))
+      );
+      message.success(`Topic updated to "${newName}"`);
+    } catch (error) {
+      console.error(error);
+      message.error("Error updating topic");
+    }
+  };
+
   return (
     <Flex vertical gap={16} style={{ padding: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -1435,15 +1461,38 @@ export default function NeetChapterQuestionsContainer() {
                         {index + 1}. {stat.topic}
                       </Tag>
                       {!isTopicMatched(stat.topic) && filters?.chapter?.id && (
-                        <Button
-                          type="link"
-                          size="small"
-                          icon={<PlusOutlined />}
-                          onClick={() => handleCreateTopic(stat.topic, topics.length + index + 1)}
-                          title="Create this topic in database"
-                        >
-                          Create
-                        </Button>
+                        <>
+                          <Button
+                            type="link"
+                            size="small"
+                            icon={<PlusOutlined />}
+                            onClick={() => handleCreateTopic(stat.topic, topics.length + index + 1)}
+                            title="Create this topic in database"
+                          >
+                            Create
+                          </Button>
+                          {topics.length > 0 && (
+                            <Dropdown
+                              menu={{
+                                items: topics.map((t) => ({
+                                  key: t.id,
+                                  label: t.name,
+                                  onClick: () => handleUpdateTopic(t.id, stat.topic),
+                                })),
+                              }}
+                              trigger={["click"]}
+                            >
+                              <Button
+                                type="link"
+                                size="small"
+                                icon={<EditOutlined />}
+                                title="Update existing topic name"
+                              >
+                                Update
+                              </Button>
+                            </Dropdown>
+                          )}
+                        </>
                       )}
                       <Text>
                         <Text strong>{stat.count}</Text> questions ({stat.range})
