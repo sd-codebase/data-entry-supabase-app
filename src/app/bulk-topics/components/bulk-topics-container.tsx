@@ -335,7 +335,7 @@ export default function BulkTopicsContainer() {
       setDirProgress({ total: uniqueDirs.length, created: 0 });
 
       // Step 3: Create directories by uploading placeholder files
-      const BUCKET_NAME = "neet-resources-store";
+      const BUCKET_NAME = "jeeadvanced-web-store";
       let created = 0;
 
       const errors: string[] = [];

@@ -29,6 +29,7 @@ yarn-error.log*
 .env*.local
 .env*.neet
 .env*.jeemains
+.env*.jeeadvanced
 
 # vercel
 .vercel
@@ -36,3 +37,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+
+# sql script in public folder
+/public/*.sql
