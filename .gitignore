@@ -41,3 +41,4 @@ next-env.d.ts
 
 # sql script in public folder
 /public/*.sql
+/public/row-data/*

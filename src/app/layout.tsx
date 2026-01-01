@@ -109,6 +109,14 @@ export default function RootLayout({
                         icon: <FormOutlined />,
                       },
                     },
+                    {
+                      name: "jee-advanced-chapter-questions",
+                      list: "/jee-advanced-chapter-questions",
+                      meta: {
+                        canDelete: false,
+                        icon: <FormOutlined />,
+                      },
+                    },
                   ]}
                   options={{
                     syncWithLocation: true,
