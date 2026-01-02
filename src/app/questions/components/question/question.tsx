@@ -11,6 +11,7 @@ import {
 import { supabaseBrowserClient } from "@utils/supabase/client";
 import MathExpression from "./math-expression";
 import { useEffect, useState } from "react";
+import { TextAreaWithImageTools } from "@components/textarea-with-image-tools";
 import {
   CheckCircleOutlined,
   CheckOutlined,
@@ -275,16 +276,16 @@ export const Question = ({
         <Flex gap={"1rem"}>
           {!onlyPreview ? (
             <Flex vertical gap="0.5rem" style={{ width: "50%" }}>
-              <TextArea
+              <TextAreaWithImageTools
                 rows={3}
                 value={que.question}
-                onChange={(e) => updateQuestion(e.target.value, "question")}
+                onChange={(value) => updateQuestion(value, "question")}
               />
-              <TextArea
+              <TextAreaWithImageTools
                 rows={1}
                 style={{ marginBottom: "0.5rem" }}
                 value={que.pyo}
-                onChange={(e) => updateQuestion(e.target.value, "pyo")}
+                onChange={(value) => updateQuestion(value, "pyo")}
               />
 
               {Object.keys(que.options || {}).map(
@@ -295,22 +296,22 @@ export const Question = ({
                     gap={"0.25rem"}
                   >
                     {opKey})
-                    <TextArea
+                    <TextAreaWithImageTools
                       rows={2}
                       value={que.options[opKey]}
-                      onChange={(e) =>
-                        updateQuestion(e.target.value, "options", opKey)
+                      onChange={(value) =>
+                        updateQuestion(value, "options", opKey)
                       }
                     />
                   </Flex>
                 )
               )}
 
-              <TextArea
+              <TextAreaWithImageTools
                 rows={1}
                 style={{ marginBottom: "0.5rem", marginTop: "0.5rem" }}
                 value={que.answer}
-                onChange={(e) => updateQuestion(e.target.value, "answer")}
+                onChange={(value) => updateQuestion(value, "answer")}
               />
 
               {/* {que?.solutions?.length

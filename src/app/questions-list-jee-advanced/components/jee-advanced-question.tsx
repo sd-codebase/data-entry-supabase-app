@@ -13,6 +13,7 @@ import {
 import { supabaseBrowserClient } from "@utils/supabase/client";
 import MathExpression from "@app/questions/components/question/math-expression";
 import { useEffect, useState } from "react";
+import { TextAreaWithImageTools } from "@components/textarea-with-image-tools";
 import {
   CheckCircleOutlined,
   CheckOutlined,
@@ -314,28 +315,28 @@ export const JeeAdvancedQuestion = ({
                   <Text strong style={{ display: "block", marginBottom: "0.5rem" }}>
                     Paragraph:
                   </Text>
-                  <TextArea
+                  <TextAreaWithImageTools
                     rows={4}
                     value={paragraphContent}
-                    onChange={(e) => setParagraphContent(e.target.value)}
+                    onChange={(value) => setParagraphContent(value)}
                     style={{ marginBottom: "0.5rem" }}
                   />
                 </div>
               )}
 
               {/* Question Editor */}
-              <TextArea
+              <TextAreaWithImageTools
                 rows={3}
                 value={que.question}
-                onChange={(e) => updateQuestion(e.target.value, "question")}
+                onChange={(value) => updateQuestion(value, "question")}
               />
 
               {/* PYO Editor */}
-              <TextArea
+              <TextAreaWithImageTools
                 rows={1}
                 style={{ marginBottom: "0.5rem" }}
                 value={que.pyo}
-                onChange={(e) => updateQuestion(e.target.value, "pyo")}
+                onChange={(value) => updateQuestion(value, "pyo")}
                 placeholder="PYO (e.g., JEE Adv. 2017)"
               />
 
@@ -358,11 +359,11 @@ export const JeeAdvancedQuestion = ({
                         gap={"0.25rem"}
                       >
                         {opKey})
-                        <TextArea
+                        <TextAreaWithImageTools
                           rows={2}
                           value={que.options[opKey]}
-                          onChange={(e) =>
-                            updateQuestion(e.target.value, "options", opKey)
+                          onChange={(value) =>
+                            updateQuestion(value, "options", opKey)
                           }
                         />
                       </Flex>
@@ -372,11 +373,11 @@ export const JeeAdvancedQuestion = ({
               )}
 
               {/* Answer Editor */}
-              <TextArea
+              <TextAreaWithImageTools
                 rows={1}
                 style={{ marginBottom: "0.5rem", marginTop: "0.5rem" }}
                 value={que.answer}
-                onChange={(e) => updateQuestion(e.target.value, "answer")}
+                onChange={(value) => updateQuestion(value, "answer")}
                 placeholder="Answer"
               />
             </Flex>
