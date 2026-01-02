@@ -240,6 +240,28 @@ export default function JeeAdvancedChapterQuestionsContainer() {
       (_, name) => `{{img_${addExtension(name.trim())}_img}}`
     );
 
+    // Handle \begin{figure}...\end{figure} blocks with caption
+    // Extract caption and image, format as: caption {{img_...}}
+    formatted = formatted.replace(
+      /\\begin\{figure\}[^\n]*\n[\s\S]*?\\caption(?:setup\{[^}]*\})?\{([^}]*)\}\s*\n?\s*(\{\{img_[^}]+_img\}\})[\s\S]*?\\end\{figure\}/g,
+      (_, caption, img) => {
+        const captionText = caption.replace(/labelformat=empty/g, "").trim();
+        return captionText ? `${captionText} ${img}` : img;
+      }
+    );
+
+    // Also handle figure blocks where image comes before caption
+    formatted = formatted.replace(
+      /\\begin\{figure\}[^\n]*\n[\s\S]*?(\{\{img_[^}]+_img\}\})[\s\S]*?\\caption(?:setup\{[^}]*\})?\{([^}]*)\}[\s\S]*?\\end\{figure\}/g,
+      (_, img, caption) => {
+        const captionText = caption.replace(/labelformat=empty/g, "").trim();
+        return captionText ? `${captionText} ${img}` : img;
+      }
+    );
+
+    // Remove any remaining \captionsetup{...}
+    formatted = formatted.replace(/\\captionsetup\{[^}]*\}/g, "");
+
     // Remove '\\' (double backslash) - do this after image conversions
     formatted = formatted.replace(/\\\\/g, "");
 
@@ -479,15 +501,17 @@ export default function JeeAdvancedChapterQuestionsContainer() {
     setFigureSearchPos(0);
   };
 
-  // Extract year from text (JEE Adv. YYYY, IIT-JEE YYYY, etc.)
+  // Extract year from text (JEE Adv. YYYY, IIT-JEE YYYY, IIT JEE YYYY, etc.)
+  // Also handles multiple years like (IIT-JEE 1993,1984)
   const extractYear = (text: string): string => {
-    // Try different patterns
+    // Try different patterns - IIT[- ]JEE matches both "IIT-JEE" and "IIT JEE"
+    // \d{4}(?:\s*,\s*\d{4})* matches one or more years separated by commas
     const patterns = [
-      /\(JEE Adv\.?\s*(\d{4})\)/i,
-      /\[JEE Adv\.?\s*(\d{4})\]/i,
-      /\(IIT-JEE\s*(\d{4})\)/i,
-      /\[IIT-JEE\s*(\d{4})\]/i,
-      /\(JEE Advanced\s*(\d{4})\)/i,
+      /\(JEE Adv\.?\s*\d{4}(?:\s*,\s*\d{4})*\)/i,
+      /\[JEE Adv\.?\s*\d{4}(?:\s*,\s*\d{4})*\]/i,
+      /\(IIT[- ]JEE\s*\d{4}(?:\s*,\s*\d{4})*\)/i,
+      /\[IIT[- ]JEE\s*\d{4}(?:\s*,\s*\d{4})*\]/i,
+      /\(JEE Advanced\s*\d{4}(?:\s*,\s*\d{4})*\)/i,
     ];
 
     for (const pattern of patterns) {
@@ -543,9 +567,8 @@ export default function JeeAdvancedChapterQuestionsContainer() {
     const mainContent = answerKeySplit[0];
     const answerKeyContent = answerKeySplit[1] || "";
 
-    // 2. Parse answers from Answer Key
-    // Handles: (a), (b, d), $(b, d)$, [3], [2.66], A-p,q B-r,s
-    const answers: Record<number, string> = {};
+    // 2. Parse answers from Answer Key - store RAW answers (will format based on type later)
+    const rawAnswers: Record<number, string> = {};
 
     // Split answer key by Q. markers or enumerate items
     const answerLines = answerKeyContent.split(/\n/).filter((line) => line.trim());
@@ -558,7 +581,8 @@ export default function JeeAdvancedChapterQuestionsContainer() {
         answerNum = parseInt(qMatch[1], 10);
         const answerPart = qMatch[2].trim();
         if (answerPart) {
-          answers[answerNum] = parseAnswerValue(answerPart);
+          // Store raw answer - will parse based on question type later
+          rawAnswers[answerNum] = answerPart;
         }
         continue;
       }
@@ -573,10 +597,39 @@ export default function JeeAdvancedChapterQuestionsContainer() {
         }
         const answerPart = simpleMatch[2].trim();
         if (answerPart && !answerPart.startsWith("\\") && !answerPart.startsWith("*")) {
-          answers[answerNum] = parseAnswerValue(answerPart);
+          // Store raw answer - will parse based on question type later
+          rawAnswers[answerNum] = answerPart;
         }
       }
     }
+
+    // Helper to format answer based on question type
+    const formatAnswerForType = (rawAnswer: string, qType: string): string => {
+      if (!rawAnswer) return "";
+
+      const lowerType = qType.toLowerCase();
+      const isMcq = lowerType.includes("single") || lowerType.includes("multiple");
+
+      if (isMcq) {
+        // For MCQ types, extract content from brackets
+        return parseAnswerValue(rawAnswer);
+      } else {
+        // For other types, just trim outer brackets/parentheses
+        let answer = rawAnswer.trim();
+        // Remove \hspace{0pt} and similar
+        answer = answer.replace(/\\hspace\{[^}]*\}/g, "").trim();
+        // Remove outer parentheses or brackets if present
+        if ((answer.startsWith("(") && answer.endsWith(")")) ||
+            (answer.startsWith("[") && answer.endsWith("]"))) {
+          answer = answer.slice(1, -1).trim();
+        }
+        // Also handle $(...)$ format
+        if (answer.startsWith("$(") && answer.endsWith(")$")) {
+          answer = answer.slice(2, -2).trim();
+        }
+        return answer;
+      }
+    };
 
     // 3. Extract chapter name from **Chapter - <name>** placeholder
     const chapterMatch = mainContent.match(/\*\*Chapter - ([^*]+)\*\*/);
@@ -714,12 +767,12 @@ export default function JeeAdvancedChapterQuestionsContainer() {
         // Extract year
         const pyo = extractYear(content);
         if (pyo) {
-          // Remove year from content
-          content = content.replace(/\(JEE Adv\.?\s*\d{4}\)/gi, "")
-            .replace(/\[JEE Adv\.?\s*\d{4}\]/gi, "")
-            .replace(/\(IIT-JEE\s*\d{4}\)/gi, "")
-            .replace(/\[IIT-JEE\s*\d{4}\]/gi, "")
-            .replace(/\(JEE Advanced\s*\d{4}\)/gi, "")
+          // Remove year from content - handles multiple years like (IIT-JEE 1993,1984)
+          content = content.replace(/\(JEE Adv\.?\s*\d{4}(?:\s*,\s*\d{4})*\)/gi, "")
+            .replace(/\[JEE Adv\.?\s*\d{4}(?:\s*,\s*\d{4})*\]/gi, "")
+            .replace(/\(IIT[- ]JEE\s*\d{4}(?:\s*,\s*\d{4})*\)/gi, "")
+            .replace(/\[IIT[- ]JEE\s*\d{4}(?:\s*,\s*\d{4})*\]/gi, "")
+            .replace(/\(JEE Advanced\s*\d{4}(?:\s*,\s*\d{4})*\)/gi, "")
             .trim();
         }
 
@@ -792,7 +845,7 @@ export default function JeeAdvancedChapterQuestionsContainer() {
         // Skip answer validation for Subjective and Fill in the Blanks type questions
         const isSubjective = questionType.toLowerCase().includes("subjective");
         const isFillInBlanks = questionType.toLowerCase().includes("fill");
-        if (!isSubjective && !isFillInBlanks && !answers[questionNum]) {
+        if (!isSubjective && !isFillInBlanks && !rawAnswers[questionNum]) {
           questionIssues.push("Answer missing");
         }
 
@@ -810,10 +863,13 @@ export default function JeeAdvancedChapterQuestionsContainer() {
         );
         const topicId = matchedTopic?.id || "";
 
+        // Format answer based on question type
+        const formattedAnswer = formatAnswerForType(rawAnswers[questionNum] || "", questionType);
+
         return {
           question: questionText,
           options,
-          answer: answers[questionNum] || "",
+          answer: formattedAnswer,
           sr_no: questionNum,
           pyo,
           topic_id: topicId,
@@ -917,6 +973,33 @@ export default function JeeAdvancedChapterQuestionsContainer() {
   };
 
   const extractImageData = (text: string): { caption: string; imageName: string } => {
+    // Check for \begin{figure}...\end{figure} block with caption and image
+    if (text.includes("\\begin{figure}") && text.includes("\\end{figure}")) {
+      // Extract caption from \caption{...} (ignore \captionsetup)
+      const captionMatch = text.match(/\\caption(?!setup)\{([^}]*)\}/);
+      const caption = captionMatch ? captionMatch[1].replace(/labelformat=empty/g, "").trim() : "";
+
+      // Extract image name from \includegraphics
+      const imgMatch = text.match(/\\includegraphics\[[^\]]*\]\{([^}]+)\}/) ||
+                       text.match(/\\includegraphics\{([^}]+)\}/);
+      if (imgMatch) {
+        return { caption, imageName: imgMatch[1].trim() };
+      }
+
+      // Check for mathpix URL inside figure
+      const mathpixMatch = text.match(/https:\/\/cdn\.mathpix\.com\/cropped\/([^?\s]+)/);
+      if (mathpixMatch) {
+        return { caption, imageName: mathpixMatch[1].trim() };
+      }
+
+      // Check for already converted {{img_..._img}} inside figure
+      const imgTagMatch = text.match(/\{\{img_([^}]+)_img\}\}/);
+      if (imgTagMatch) {
+        // Return as-is without adding extension
+        return { caption, imageName: imgTagMatch[1] };
+      }
+    }
+
     // Check for includegraphics with brackets
     const includeMatch = text.match(/\\includegraphics\[[^\]]*\]\{([^}]+)\}/);
     if (includeMatch) {
@@ -2116,7 +2199,7 @@ export default function JeeAdvancedChapterQuestionsContainer() {
                             type="link"
                             size="small"
                             icon={<PlusOutlined />}
-                            onClick={() => handleCreateTopic(stat.topic, topics.length + index + 1)}
+                            onClick={() => handleCreateTopic(stat.topic, topics.length + 1)}
                             title="Create this topic in database"
                           >
                             Create

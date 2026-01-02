@@ -1,10 +1,11 @@
 "use client";
 
 import { formatTableContent } from "@/utils/formatter/table";
-import { CompressOutlined, CopyOutlined, DeleteColumnOutlined } from "@ant-design/icons";
+import { CompressOutlined, CopyOutlined, DeleteColumnOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
 import MathExpressions from "@app/questions/components/question/math-expression";
 import { Button, Card, Col, Input, message, Row, Typography } from "antd";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import type { TextAreaRef } from "antd/es/input/TextArea";
 
 const { TextArea } = Input;
 const { Text, Title } = Typography;
@@ -13,6 +14,7 @@ export default function TableFormatter() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
+  const outputTextAreaRef = useRef<TextAreaRef>(null);
 
   useEffect(() => {
     if (input) {
@@ -109,6 +111,52 @@ export default function TableFormatter() {
     messageApi.success(`Replaced ${matches.length} \\multicolumn tags`);
   };
 
+  // Remove all \hline and newlines before/after them
+  const handleRemoveHlines = () => {
+    if (!output.trim()) {
+      messageApi.warning("No output text");
+      return;
+    }
+
+    // Remove \hline along with newlines before and after it
+    const hlinePattern = /\n*\\hline\n*/g;
+    const matches = output.match(hlinePattern);
+
+    if (!matches || matches.length === 0) {
+      messageApi.info("No \\hline found");
+      return;
+    }
+
+    const newText = output.replace(hlinePattern, "\n");
+    setOutput(newText);
+    messageApi.success(`Removed ${matches.length} \\hline`);
+  };
+
+  // Add \hline at cursor position with newlines
+  const handleAddHline = () => {
+    const textArea = outputTextAreaRef.current?.resizableTextArea?.textArea;
+    if (!textArea) {
+      messageApi.warning("Could not access text area");
+      return;
+    }
+
+    const cursorPos = textArea.selectionStart;
+    const textBefore = output.slice(0, cursorPos);
+    const textAfter = output.slice(cursorPos);
+
+    const newText = textBefore + "\n\\hline\n" + textAfter;
+    setOutput(newText);
+
+    // Restore cursor position after the inserted text
+    setTimeout(() => {
+      const newPos = cursorPos + "\n\\hline\n".length;
+      textArea.setSelectionRange(newPos, newPos);
+      textArea.focus();
+    }, 0);
+
+    messageApi.success("Added \\hline at cursor position");
+  };
+
   return (
     <>
       {contextHolder}
@@ -152,16 +200,36 @@ export default function TableFormatter() {
           <Card
             title="Output"
             extra={
-              <Button
-                type="primary"
-                icon={<CopyOutlined />}
-                onClick={() => handleCopy(output)}
-              >
-                Copy
-              </Button>
+              <>
+                <Button
+                  onClick={handleRemoveHlines}
+                  size="small"
+                  disabled={!output.trim()}
+                  title="Remove all \hline"
+                  icon={<MinusOutlined />}
+                  style={{ marginRight: 4 }}
+                />
+                <Button
+                  onClick={handleAddHline}
+                  size="small"
+                  disabled={!output.trim()}
+                  title="Add \hline at cursor"
+                  icon={<PlusOutlined />}
+                  style={{ marginRight: 4 }}
+                />
+                <Button
+                  type="primary"
+                  icon={<CopyOutlined />}
+                  onClick={() => handleCopy(output)}
+                  size="small"
+                >
+                  Copy
+                </Button>
+              </>
             }
           >
             <TextArea
+              ref={outputTextAreaRef}
               value={output}
               onChange={(e) => setOutput(e.target.value)}
               placeholder="Formatted output will appear here..."

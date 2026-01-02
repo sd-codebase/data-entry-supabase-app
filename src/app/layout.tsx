@@ -18,6 +18,7 @@ import {
   FileDoneOutlined,
   FormOutlined,
   LayoutOutlined,
+  OrderedListOutlined,
   ProfileOutlined,
   TableOutlined,
 } from "@ant-design/icons";
@@ -115,6 +116,14 @@ export default function RootLayout({
                       meta: {
                         canDelete: false,
                         icon: <FormOutlined />,
+                      },
+                    },
+                    {
+                      name: "questions-list-jee-advanced",
+                      list: "/questions-list-jee-advanced",
+                      meta: {
+                        canDelete: false,
+                        icon: <OrderedListOutlined />,
                       },
                     },
                   ]}
