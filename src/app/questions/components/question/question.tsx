@@ -24,6 +24,7 @@ interface QuestionProps {
   handleUpdate?: (question: any) => void;
   isUpdatedQuestion?: boolean;
   topicId?: string;
+  topicNumber?: number;
   onlyPreview?: boolean;
 }
 
@@ -35,6 +36,7 @@ export const Question = ({
   handleUpdate,
   isUpdatedQuestion,
   topicId,
+  topicNumber,
   onlyPreview = false,
 }: QuestionProps) => {
   const [que, setQue] = useState<any>(null);
@@ -280,12 +282,16 @@ export const Question = ({
                 rows={3}
                 value={que.question}
                 onChange={(value) => updateQuestion(value, "question")}
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
               />
               <TextAreaWithImageTools
                 rows={1}
                 style={{ marginBottom: "0.5rem" }}
                 value={que.pyo}
                 onChange={(value) => updateQuestion(value, "pyo")}
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
               />
 
               {Object.keys(que.options || {}).map(
@@ -302,6 +308,8 @@ export const Question = ({
                       onChange={(value) =>
                         updateQuestion(value, "options", opKey)
                       }
+                      topicNumber={topicNumber}
+                      questionNumber={que.srNo}
                     />
                   </Flex>
                 )
@@ -312,6 +320,8 @@ export const Question = ({
                 style={{ marginBottom: "0.5rem", marginTop: "0.5rem" }}
                 value={que.answer}
                 onChange={(value) => updateQuestion(value, "answer")}
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
               />
 
               {/* {que?.solutions?.length

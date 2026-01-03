@@ -16,6 +16,7 @@ import {
   CheckOutlined,
   DatabaseOutlined,
   FileDoneOutlined,
+  FilePdfOutlined,
   FormOutlined,
   LayoutOutlined,
   OrderedListOutlined,
@@ -124,6 +125,14 @@ export default function RootLayout({
                       meta: {
                         canDelete: false,
                         icon: <OrderedListOutlined />,
+                      },
+                    },
+                    {
+                      name: "pdf-viewer",
+                      list: "/pdf-viewer",
+                      meta: {
+                        canDelete: false,
+                        icon: <FilePdfOutlined />,
                       },
                     },
                   ]}

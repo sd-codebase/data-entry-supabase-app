@@ -72,6 +72,7 @@ export function QuestionsListContainer() {
               <Question
                 question={question}
                 handleUpdate={(que) => handleUpdate(que, index)}
+                topicNumber={filters?.topic?.order}
               />
             </div>
           ))}

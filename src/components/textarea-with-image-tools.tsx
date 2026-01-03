@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useCallback } from "react";
 import { Button, Flex, Input, message, Tooltip } from "antd";
-import { SmileOutlined } from "@ant-design/icons";
+import { SmileOutlined, CloudUploadOutlined, LoadingOutlined } from "@ant-design/icons";
 import {
   toggleSmilePrefix,
   replaceExtensionWithJpg,
@@ -10,6 +10,7 @@ import {
   replaceExtensionWithPng,
   hasImageSyntax,
 } from "@utils/image-syntax";
+import { useImageUpload } from "@/hooks/useImageUpload";
 
 const { TextArea } = Input;
 
@@ -19,6 +20,8 @@ interface TextAreaWithImageToolsProps {
   rows?: number;
   style?: React.CSSProperties;
   placeholder?: string;
+  topicNumber?: number;
+  questionNumber?: number;
 }
 
 export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
@@ -27,8 +30,75 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
   rows = 3,
   style,
   placeholder,
+  topicNumber,
+  questionNumber,
 }) => {
   const textareaRef = useRef<any>(null);
+  const { uploadImage, isUploading } = useImageUpload();
+
+  const insertAtCursor = useCallback(
+    (text: string) => {
+      const textarea = textareaRef.current?.resizableTextArea?.textArea;
+      if (!textarea) return;
+
+      const cursorPos = textarea.selectionStart;
+      const newValue =
+        value.substring(0, cursorPos) + text + value.substring(cursorPos);
+      onChange(newValue);
+
+      setTimeout(() => {
+        textarea.focus();
+        const newPos = cursorPos + text.length;
+        textarea.setSelectionRange(newPos, newPos);
+      }, 0);
+    },
+    [value, onChange]
+  );
+
+  const handleUploadFromClipboard = useCallback(async () => {
+    try {
+      const clipboardItems = await navigator.clipboard.read();
+
+      let imageBlob: Blob | null = null;
+
+      for (const item of clipboardItems) {
+        const imageType = item.types.find((type) => type.startsWith("image/"));
+        if (imageType) {
+          imageBlob = await item.getType(imageType);
+          break;
+        }
+      }
+
+      if (!imageBlob) {
+        message.warning("No image found in clipboard");
+        return;
+      }
+
+      const filespath = localStorage.getItem("filespath");
+      if (!filespath) {
+        message.warning("Please select a topic first before uploading images");
+        return;
+      }
+
+      const result = await uploadImage(imageBlob, topicNumber, questionNumber);
+
+      if (result.filename) {
+        const imageSyntax = `{{img_${result.filename}_img}}`;
+        insertAtCursor(imageSyntax);
+        // Clear clipboard with dummy text to prevent re-uploading same image
+        await navigator.clipboard.writeText("clipboard cleared");
+        message.success("Image uploaded successfully");
+      } else {
+        message.error(result.error || "Failed to upload image");
+      }
+    } catch (err) {
+      if (err instanceof Error && err.name === "NotAllowedError") {
+        message.error("Clipboard access denied. Please allow clipboard permissions.");
+      } else {
+        message.error("Failed to read clipboard");
+      }
+    }
+  }, [uploadImage, insertAtCursor, topicNumber, questionNumber]);
 
   const handleAction = (action: "smile" | "jpg" | "jpeg" | "png") => {
     const textarea = textareaRef.current?.resizableTextArea?.textArea;
@@ -102,11 +172,13 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
   return (
     <div style={{ flex: 1 }}>
       <Flex gap="4px" style={{ marginBottom: "4px" }}>
+        {/* Hidden for now
         <Tooltip title="Toggle smile- prefix">
           <Button
             size="small"
             icon={<SmileOutlined />}
             onClick={() => handleAction("smile")}
+            disabled={isUploading}
           />
         </Tooltip>
         <Tooltip title="Change extension to .jpg">
@@ -114,6 +186,7 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
             size="small"
             onClick={() => handleAction("jpg")}
             style={{ fontSize: "10px", padding: "0 6px" }}
+            disabled={isUploading}
           >
             JPG
           </Button>
@@ -123,6 +196,7 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
             size="small"
             onClick={() => handleAction("jpeg")}
             style={{ fontSize: "10px", padding: "0 6px" }}
+            disabled={isUploading}
           >
             JPEG
           </Button>
@@ -132,10 +206,19 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
             size="small"
             onClick={() => handleAction("png")}
             style={{ fontSize: "10px", padding: "0 6px" }}
+            disabled={isUploading}
           >
             PNG
           </Button>
         </Tooltip>
+        */}
+        <Button
+          size="small"
+          icon={isUploading ? <LoadingOutlined /> : <CloudUploadOutlined />}
+          onClick={handleUploadFromClipboard}
+          disabled={isUploading}
+          loading={isUploading}
+        />
       </Flex>
       <TextArea
         ref={textareaRef}
@@ -144,6 +227,7 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
         rows={rows}
         style={style}
         placeholder={placeholder}
+        disabled={isUploading}
       />
     </div>
   );

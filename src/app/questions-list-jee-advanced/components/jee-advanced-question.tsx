@@ -26,6 +26,7 @@ interface JeeAdvancedQuestionProps {
   handleUpdate?: (question: any) => void;
   isUpdatedQuestion?: boolean;
   topicId?: string;
+  topicNumber?: number;
   onlyPreview?: boolean;
 }
 
@@ -69,6 +70,7 @@ export const JeeAdvancedQuestion = ({
   handleUpdate,
   isUpdatedQuestion,
   topicId,
+  topicNumber,
   onlyPreview = false,
 }: JeeAdvancedQuestionProps) => {
   const [que, setQue] = useState<any>(null);
@@ -320,6 +322,8 @@ export const JeeAdvancedQuestion = ({
                     value={paragraphContent}
                     onChange={(value) => setParagraphContent(value)}
                     style={{ marginBottom: "0.5rem" }}
+                    topicNumber={topicNumber}
+                    questionNumber={que.srNo}
                   />
                 </div>
               )}
@@ -329,6 +333,8 @@ export const JeeAdvancedQuestion = ({
                 rows={3}
                 value={que.question}
                 onChange={(value) => updateQuestion(value, "question")}
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
               />
 
               {/* PYO Editor */}
@@ -338,6 +344,8 @@ export const JeeAdvancedQuestion = ({
                 value={que.pyo}
                 onChange={(value) => updateQuestion(value, "pyo")}
                 placeholder="PYO (e.g., JEE Adv. 2017)"
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
               />
 
               {/* Type Editor */}
@@ -365,6 +373,8 @@ export const JeeAdvancedQuestion = ({
                           onChange={(value) =>
                             updateQuestion(value, "options", opKey)
                           }
+                          topicNumber={topicNumber}
+                          questionNumber={que.srNo}
                         />
                       </Flex>
                     )
@@ -379,6 +389,8 @@ export const JeeAdvancedQuestion = ({
                 value={que.answer}
                 onChange={(value) => updateQuestion(value, "answer")}
                 placeholder="Answer"
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
               />
             </Flex>
           ) : null}
