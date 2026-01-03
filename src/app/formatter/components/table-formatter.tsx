@@ -1,7 +1,14 @@
 "use client";
 
 import { formatTableContent } from "@/utils/formatter/table";
-import { CompressOutlined, CopyOutlined, DeleteColumnOutlined, MinusOutlined, PlusOutlined } from "@ant-design/icons";
+import {
+  CompressOutlined,
+  CopyOutlined,
+  DeleteColumnOutlined,
+  MinusOutlined,
+  PlusOutlined,
+  TableOutlined,
+} from "@ant-design/icons";
 import MathExpressions from "@app/questions/components/question/math-expression";
 import { Button, Card, Col, Input, message, Row, Typography } from "antd";
 import { useEffect, useRef, useState } from "react";
@@ -14,6 +21,7 @@ export default function TableFormatter() {
   const [input, setInput] = useState("");
   const [output, setOutput] = useState("");
   const [messageApi, contextHolder] = message.useMessage();
+  const inputTextAreaRef = useRef<TextAreaRef>(null);
   const outputTextAreaRef = useRef<TextAreaRef>(null);
 
   useEffect(() => {
@@ -65,7 +73,9 @@ export default function TableFormatter() {
     let text = input;
 
     // Find all \begin{tabular}{...} matches
-    const beginMatches = Array.from(text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g));
+    const beginMatches = Array.from(
+      text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g)
+    );
     // Find all \end{tabular} matches
     const endMatches = Array.from(text.matchAll(/\\end\{tabular\}/g));
 
@@ -77,18 +87,26 @@ export default function TableFormatter() {
     // Remove inner \end{tabular} (all except last) - work backwards to preserve indices
     for (let i = endMatches.length - 2; i >= 0; i--) {
       const match = endMatches[i];
-      text = text.slice(0, match.index) + text.slice(match.index! + match[0].length);
+      text =
+        text.slice(0, match.index) + text.slice(match.index! + match[0].length);
     }
 
     // Remove inner \begin{tabular} (all except first) - recalculate matches after previous removals
-    const newBeginMatches = Array.from(text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g));
+    const newBeginMatches = Array.from(
+      text.matchAll(/\\begin\{tabular\}(\{[^}]*\})?/g)
+    );
     for (let i = newBeginMatches.length - 1; i >= 1; i--) {
       const match = newBeginMatches[i];
-      text = text.slice(0, match.index) + text.slice(match.index! + match[0].length);
+      text =
+        text.slice(0, match.index) + text.slice(match.index! + match[0].length);
     }
 
     setInput(text);
-    messageApi.success(`Removed ${beginMatches.length - 1} inner begin and ${endMatches.length - 1} inner end tabular tags`);
+    messageApi.success(
+      `Removed ${beginMatches.length - 1} inner begin and ${
+        endMatches.length - 1
+      } inner end tabular tags`
+    );
   };
 
   const handleStripMulticolumn = () => {
@@ -157,6 +175,38 @@ export default function TableFormatter() {
     messageApi.success("Added \\hline at cursor position");
   };
 
+  const handleInsertDummyTable = () => {
+    const dummyTable = `
+\\begin{tabular}{|c|c|c|c|c|}
+& List I &  & List II
+\\hline
+a &  & i. &
+\\hline
+b &  & ii. &
+\\hline
+c &  & iii. &
+\\hline
+d &  & iv. &
+\\end{tabular}
+    `;
+
+    const textArea = inputTextAreaRef.current?.resizableTextArea?.textArea;
+    if (textArea) {
+      const cursorPos = textArea.selectionStart;
+      const newText =
+        input.slice(0, cursorPos) + dummyTable + input.slice(cursorPos);
+      setInput(newText);
+
+      setTimeout(() => {
+        const newPos = cursorPos + dummyTable.length;
+        textArea.setSelectionRange(newPos, newPos);
+        textArea.focus();
+      }, 0);
+    } else {
+      setInput(input + dummyTable);
+    }
+  };
+
   return (
     <>
       {contextHolder}
@@ -169,6 +219,13 @@ export default function TableFormatter() {
             title="Input"
             extra={
               <>
+                <Button
+                  onClick={handleInsertDummyTable}
+                  size="small"
+                  title="Insert dummy table (4 rows x 5 cols)"
+                  icon={<TableOutlined />}
+                  style={{ marginRight: 4 }}
+                />
                 <Button
                   onClick={handleFlattenTables}
                   size="small"
@@ -188,6 +245,7 @@ export default function TableFormatter() {
             }
           >
             <TextArea
+              ref={inputTextAreaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               placeholder="Enter your table data here..."

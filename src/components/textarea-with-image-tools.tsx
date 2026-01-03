@@ -258,6 +258,14 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
         />
         <Button
           size="small"
+          onClick={() => insertAtCursor("\\\\ ")}
+          disabled={isUploading}
+          style={{ fontSize: "10px", padding: "0 6px" }}
+        >
+          \\
+        </Button>
+        <Button
+          size="small"
           icon={<DeleteOutlined />}
           onClick={handleClear}
           disabled={isUploading}
