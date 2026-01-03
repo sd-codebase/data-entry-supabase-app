@@ -2,7 +2,12 @@
 
 import React, { useRef, useCallback } from "react";
 import { Button, Flex, Input, message, Tooltip } from "antd";
-import { SmileOutlined, CloudUploadOutlined, LoadingOutlined } from "@ant-design/icons";
+import {
+  SmileOutlined,
+  CloudUploadOutlined,
+  LoadingOutlined,
+  DeleteOutlined,
+} from "@ant-design/icons";
 import {
   toggleSmilePrefix,
   replaceExtensionWithJpg,
@@ -93,12 +98,42 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
       }
     } catch (err) {
       if (err instanceof Error && err.name === "NotAllowedError") {
-        message.error("Clipboard access denied. Please allow clipboard permissions.");
+        message.error(
+          "Clipboard access denied. Please allow clipboard permissions."
+        );
       } else {
         message.error("Failed to read clipboard");
       }
     }
   }, [uploadImage, insertAtCursor, topicNumber, questionNumber]);
+
+  const handleClear = useCallback(() => {
+    const textarea = textareaRef.current?.resizableTextArea?.textArea;
+    if (!textarea) return;
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+
+    if (selectionStart !== selectionEnd) {
+      // Remove selected text only
+      const newValue =
+        value.substring(0, selectionStart) + value.substring(selectionEnd);
+      onChange(newValue);
+      // Set cursor to where selection started
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(selectionStart, selectionStart);
+      }, 0);
+    } else {
+      // Clear all text
+      onChange("");
+      // Set cursor to start
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(0, 0);
+      }, 0);
+    }
+  }, [value, onChange]);
 
   const handleAction = (action: "smile" | "jpg" | "jpeg" | "png") => {
     const textarea = textareaRef.current?.resizableTextArea?.textArea;
@@ -126,7 +161,9 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
       );
 
       // Find image syntax in current line
-      const imgMatch = currentLine.match(/\{\{(img|imgcell)_[^}]+_(img|imgcell)\}\}/);
+      const imgMatch = currentLine.match(
+        /\{\{(img|imgcell)_[^}]+_(img|imgcell)\}\}/
+      );
       if (!imgMatch) {
         message.warning("No image syntax found in current line");
         return;
@@ -218,6 +255,14 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
           onClick={handleUploadFromClipboard}
           disabled={isUploading}
           loading={isUploading}
+        />
+        <Button
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={handleClear}
+          disabled={isUploading}
+          danger
+          style={{ marginLeft: "4rem" }}
         />
       </Flex>
       <TextArea
