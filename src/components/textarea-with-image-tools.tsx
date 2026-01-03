@@ -206,6 +206,77 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
     }, 0);
   };
 
+  const handleInsertRowSeparator = useCallback(() => {
+    const textarea = textareaRef.current?.resizableTextArea?.textArea;
+    if (!textarea) return;
+
+    const selectionStart = textarea.selectionStart;
+    const selectionEnd = textarea.selectionEnd;
+
+    // No selection - just insert \\ at cursor (current behavior)
+    if (selectionStart === selectionEnd) {
+      insertAtCursor("\\\\ ");
+      return;
+    }
+
+    // Text is selected - check for array/matrix pattern within selection
+    const selectedText = value.substring(selectionStart, selectionEnd);
+    const arrayPattern =
+      /(\\left\[\\begin\{array\}\{([clr]+)\}(.+?)\\end\{array\}\\right\])/;
+    const match = selectedText.match(arrayPattern);
+
+    if (!match) {
+      // No array pattern found, just insert \\ at cursor
+      insertAtCursor("\\\\ ");
+      return;
+    }
+
+    const fullMatch = match[1]; // the entire matched pattern
+    const columnSpec = match[2]; // e.g., "cc" or "ccc"
+    const content = match[3]; // the content between begin and end
+    const numColumns = columnSpec.length;
+    const matchIndex = match.index!; // position of match within selection
+
+    // Split content into individual atoms (split by & first, then by whitespace)
+    const rawParts = content.split("&").map((p) => p.trim());
+    const atoms: string[] = [];
+    for (const part of rawParts) {
+      const subParts = part.split(/\s+/).filter((s) => s.length > 0);
+      atoms.push(...subParts);
+    }
+
+    // Rebuild with & within rows and \\ between rows
+    let newContent = "";
+    for (let i = 0; i < atoms.length; i++) {
+      newContent += atoms[i];
+      if (i < atoms.length - 1) {
+        if ((i + 1) % numColumns === 0) {
+          newContent += " \\\\ ";
+        } else {
+          newContent += " & ";
+        }
+      }
+    }
+
+    const newArrayText = `\\left[\\begin{array}{${columnSpec}}${newContent}\\end{array}\\right]`;
+    // Replace only the matched portion within the selection
+    const newSelectedText =
+      selectedText.substring(0, matchIndex) +
+      newArrayText +
+      selectedText.substring(matchIndex + fullMatch.length);
+    const newValue =
+      value.substring(0, selectionStart) +
+      newSelectedText +
+      value.substring(selectionEnd);
+    onChange(newValue);
+
+    setTimeout(() => {
+      textarea.focus();
+      const newSelectionEnd = selectionStart + newSelectedText.length;
+      textarea.setSelectionRange(selectionStart, newSelectionEnd);
+    }, 0);
+  }, [value, onChange, insertAtCursor]);
+
   return (
     <div style={{ flex: 1 }}>
       <Flex gap="4px" style={{ marginBottom: "4px" }}>
@@ -258,9 +329,9 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
         />
         <Button
           size="small"
-          onClick={() => insertAtCursor("\\\\ ")}
+          onClick={handleInsertRowSeparator}
           disabled={isUploading}
-          style={{ fontSize: "10px", padding: "0 6px" }}
+          style={{ fontSize: "10px", padding: "0 12px" }}
         >
           \\
         </Button>
