@@ -175,18 +175,22 @@ export default function TableFormatter() {
     messageApi.success("Added \\hline at cursor position");
   };
 
-  const handleInsertDummyTable = () => {
+  const handleInsertDummyTable = (uppercase = false) => {
+    const letters = uppercase ? ["A", "B", "C", "D"] : ["a", "b", "c", "d"];
+    const romanLetters = uppercase
+      ? ["I", "II", "III", "IV"]
+      : ["i", "ii", "iii", "iv"];
     const dummyTable = `
 \\begin{tabular}{|c|c|c|c|c|}
 & List I &  & List II
 \\hline
-a &  & i. &
+${letters[0]} &  & ${romanLetters[0]}. &
 \\hline
-b &  & ii. &
+${letters[1]} &  & ${romanLetters[1]}. &
 \\hline
-c &  & iii. &
+${letters[2]} &  & ${romanLetters[2]}. &
 \\hline
-d &  & iv. &
+${letters[3]} &  & ${romanLetters[3]}. &
 \\end{tabular}
     `;
 
@@ -220,12 +224,23 @@ d &  & iv. &
             extra={
               <>
                 <Button
-                  onClick={handleInsertDummyTable}
+                  onClick={() => handleInsertDummyTable(false)}
                   size="small"
-                  title="Insert dummy table (4 rows x 5 cols)"
+                  title="Insert dummy table (a, b, c, d)"
                   icon={<TableOutlined />}
                   style={{ marginRight: 4 }}
-                />
+                >
+                  a-d
+                </Button>
+                <Button
+                  onClick={() => handleInsertDummyTable(true)}
+                  size="small"
+                  title="Insert dummy table (A, B, C, D)"
+                  icon={<TableOutlined />}
+                  style={{ marginRight: 4 }}
+                >
+                  A-D
+                </Button>
                 <Button
                   onClick={handleFlattenTables}
                   size="small"
