@@ -7,6 +7,7 @@ import {
   DeleteColumnOutlined,
   MinusOutlined,
   PlusOutlined,
+  SwapOutlined,
   TableOutlined,
 } from "@ant-design/icons";
 import MathExpressions from "@app/questions/components/question/math-expression";
@@ -150,6 +151,26 @@ export default function TableFormatter() {
     messageApi.success(`Removed ${matches.length} \\hline`);
   };
 
+  // Replace {{img_..._img}} with {{imgcell_..._imgcell}}
+  const handleReplaceImgWithImgcell = () => {
+    if (!output.trim()) {
+      messageApi.warning("No output text");
+      return;
+    }
+
+    const imgPattern = /\{\{img_([^}]+)_img\}\}/g;
+    const matches = output.match(imgPattern);
+
+    if (!matches || matches.length === 0) {
+      messageApi.info("No {{img_..._img}} found");
+      return;
+    }
+
+    const newText = output.replace(imgPattern, "{{imgcell_$1_imgcell}}");
+    setOutput(newText);
+    messageApi.success(`Replaced ${matches.length} img with imgcell`);
+  };
+
   // Add \hline at cursor position with newlines
   const handleAddHline = () => {
     const textArea = outputTextAreaRef.current?.resizableTextArea?.textArea;
@@ -290,6 +311,16 @@ ${letters[3]} &  & ${romanLetters[3]}. &
                   icon={<PlusOutlined />}
                   style={{ marginRight: 4 }}
                 />
+                <Button
+                  onClick={handleReplaceImgWithImgcell}
+                  size="small"
+                  disabled={!output.trim()}
+                  title="Replace img with imgcell"
+                  icon={<SwapOutlined />}
+                  style={{ marginRight: 4 }}
+                >
+                  imgcell
+                </Button>
                 <Button
                   type="primary"
                   icon={<CopyOutlined />}

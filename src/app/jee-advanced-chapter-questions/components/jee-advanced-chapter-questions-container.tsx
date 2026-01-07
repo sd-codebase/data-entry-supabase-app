@@ -18,7 +18,7 @@ import {
   SearchOutlined,
   WarningOutlined,
 } from "@ant-design/icons";
-import { Button, Card, Dropdown, Flex, Input, message, Tag, Typography } from "antd";
+import { Button, Card, Dropdown, Flex, Input, message, Modal, Tag, Typography } from "antd";
 import { useRef, useState } from "react";
 import { supabaseBrowserClient } from "@utils/supabase/client";
 
@@ -1642,11 +1642,8 @@ export default function JeeAdvancedChapterQuestionsContainer() {
     message.success("Found figure");
   };
 
-  const handleSaveQuestions = async () => {
-    if (!jsonOutput) {
-      message.warning("Please parse the text first");
-      return;
-    }
+  const performSaveQuestions = async () => {
+    if (!jsonOutput) return;
 
     // Check if any questions have missing topic_id
     const questionsWithoutTopic = jsonOutput.topics.flatMap((t) =>
@@ -1742,6 +1739,58 @@ export default function JeeAdvancedChapterQuestionsContainer() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleSaveQuestions = () => {
+    if (!jsonOutput) {
+      message.warning("Please parse the text first");
+      return;
+    }
+
+    // Check for unprocessed content in output text
+    const validationWarnings: string[] = [];
+
+    if (outputText.includes("\\begin{tabular}") || outputText.includes("\\end{tabular}")) {
+      validationWarnings.push("Unprocessed \\begin{tabular} or \\end{tabular} found");
+    }
+
+    if (outputText.includes("(X-Y)")) {
+      validationWarnings.push("Placeholder (X-Y) passage range found");
+    }
+
+    if (outputText.includes("Assertion Reason")) {
+      validationWarnings.push("\"Assertion Reason\" found in text");
+    }
+
+    if (/Match\s+.*\s*[Cc]olumn/i.test(outputText)) {
+      validationWarnings.push("\"Match ... Column\" found in text");
+    }
+
+    if (validationWarnings.length > 0) {
+      Modal.confirm({
+        title: "Validation Warnings",
+        icon: <WarningOutlined style={{ color: "#faad14" }} />,
+        content: (
+          <div>
+            <p>The following issues were found:</p>
+            <ul style={{ margin: "8px 0", paddingLeft: 20 }}>
+              {validationWarnings.map((warning, index) => (
+                <li key={index} style={{ color: "#faad14" }}>{warning}</li>
+              ))}
+            </ul>
+            <p>Do you want to proceed anyway?</p>
+          </div>
+        ),
+        okText: "Proceed",
+        cancelText: "Cancel",
+        onOk: () => {
+          performSaveQuestions();
+        },
+      });
+      return;
+    }
+
+    performSaveQuestions();
   };
 
   // Check if extracted topic matches any selected chapter topic
