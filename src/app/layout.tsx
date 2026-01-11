@@ -120,6 +120,14 @@ export default function RootLayout({
                       },
                     },
                     {
+                      name: "mpscgs-chapter-questions",
+                      list: "/mpscgs-chapter-questions",
+                      meta: {
+                        canDelete: false,
+                        icon: <FormOutlined />,
+                      },
+                    },
+                    {
                       name: "questions-list-jee-advanced",
                       list: "/questions-list-jee-advanced",
                       meta: {

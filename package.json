@@ -10,6 +10,7 @@
     "dev:jeemains": "cp .env.jeemains .env.local && cross-env NODE_OPTIONS=--max_old_space_size=4096 PORT=3020 refine dev",
     "dev:neet": "cp .env.neet .env.local && cross-env NODE_OPTIONS=--max_old_space_size=4096 PORT=3021 refine dev",
     "dev:jeeadvanced": "cp .env.jeeadvanced .env.local && cross-env NODE_OPTIONS=--max_old_space_size=4096 PORT=3022 refine dev",
+    "dev:mpscgs": "cp .env.mpscgs .env.local && cross-env NODE_OPTIONS=--max_old_space_size=4096 PORT=3023 refine dev",
     "build": "refine build",
     "start": "refine start",
     "lint": "next lint",
