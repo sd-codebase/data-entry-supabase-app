@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Button, Flex, Form, Select } from "antd";
+import { Button, Col, Form, Row, Select } from "antd";
 import React, { useEffect, useState } from "react";
 import { supabaseBrowserClient } from "@/utils/supabase/client";
 
@@ -197,62 +197,72 @@ export default function DropdownFilters({
 
   return (
     <Form layout="vertical" form={form} onFinish={onFinish}>
-      <Flex gap={"1rem"} align="end" justify="space-between">
-        <Form.Item
-          label="Course"
-          name="course"
-          rules={[{ required: true, message: "Please select course!" }]}
-        >
-          <Select
-            options={options.course?.map(({ name: label, id: value }) => ({
-              label,
-              value,
-            }))}
-            style={{ width: "18rem" }}
-            placeholder="Select course"
-          />
-        </Form.Item>
-        <Form.Item
-          label="Subject"
-          name="subject"
-          rules={[{ required: true, message: "Please select subject!" }]}
-        >
-          <Select
-            options={filteredOptions.subject}
-            style={{ width: "18rem" }}
-            placeholder="Select subject"
-          />
-        </Form.Item>
-        <Form.Item
-          label="Chapter"
-          name="chapter"
-          rules={[{ required: true, message: "Please select chapter!" }]}
-        >
-          <Select
-            options={filteredOptions.chapter}
-            style={{ width: "18rem" }}
-            placeholder="Select chapter"
-          />
-        </Form.Item>
-        {noTopic ? null : (
+      <Row gutter={[16, 8]} align="bottom">
+        <Col xs={24} sm={12} md={8} lg={noTopic ? 6 : 5}>
           <Form.Item
-            label="Topic"
-            name="topic"
-            rules={[{ required: true, message: "Please select topic!" }]}
+            label="Course"
+            name="course"
+            rules={[{ required: true, message: "Please select course!" }]}
           >
             <Select
-              options={filteredOptions.topic}
-              style={{ width: "18rem" }}
-              placeholder="Select topic"
+              options={options.course?.map(({ name: label, id: value }) => ({
+                label,
+                value,
+              }))}
+              style={{ width: "100%" }}
+              placeholder="Select course"
             />
           </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={noTopic ? 6 : 5}>
+          <Form.Item
+            label="Subject"
+            name="subject"
+            rules={[{ required: true, message: "Please select subject!" }]}
+          >
+            <Select
+              options={filteredOptions.subject}
+              style={{ width: "100%" }}
+              placeholder="Select subject"
+            />
+          </Form.Item>
+        </Col>
+        <Col xs={24} sm={12} md={8} lg={noTopic ? 6 : 5}>
+          <Form.Item
+            label="Chapter"
+            name="chapter"
+            rules={[{ required: true, message: "Please select chapter!" }]}
+          >
+            <Select
+              options={filteredOptions.chapter}
+              style={{ width: "100%" }}
+              placeholder="Select chapter"
+            />
+          </Form.Item>
+        </Col>
+        {noTopic ? null : (
+          <Col xs={24} sm={12} md={8} lg={5}>
+            <Form.Item
+              label="Topic"
+              name="topic"
+              rules={[{ required: true, message: "Please select topic!" }]}
+            >
+              <Select
+                options={filteredOptions.topic}
+                style={{ width: "100%" }}
+                placeholder="Select topic"
+              />
+            </Form.Item>
+          </Col>
         )}
-        <Form.Item>
-          <Button type="primary" htmlType="submit">
-            Submit
-          </Button>
-        </Form.Item>
-      </Flex>
+        <Col xs={24} sm={12} md={8} lg={noTopic ? 6 : 4}>
+          <Form.Item>
+            <Button type="primary" htmlType="submit" block>
+              Submit
+            </Button>
+          </Form.Item>
+        </Col>
+      </Row>
     </Form>
   );
 }

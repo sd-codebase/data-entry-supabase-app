@@ -1,11 +1,13 @@
 import { supabaseBrowserClient } from "@utils/supabase/client";
 import {
   Button,
+  Col,
   Flex,
   Form,
   Input,
   message,
   Modal,
+  Row,
   Space,
   Typography,
 } from "antd";
@@ -168,47 +170,64 @@ export const QuestionsListInfo = ({
 
   return (
     <>
-      <Flex gap={"1.5rem"}>
-        <Space direction="vertical">
-          <h5>Total</h5>
-          <Text>{totalQuestions}</Text>
-        </Space>
-        <Space direction="vertical">
-          <h5>Questions</h5>
-          <Text>
-            Start: {staertAndEndNo.start} End: {staertAndEndNo.end}
-          </Text>
-        </Space>
-        <Space direction="vertical">
-          <h5>Questions With Options</h5>
-          <Text>{optionsQuestions?.join(", ")}</Text>
-        </Space>
-        <Space direction="vertical">
-          <h5>Repeat Questions</h5>
-          <Text>{repeatQuestions?.join(", ")}</Text>
-        </Space>
-        <Space direction="vertical">
-          <h5>Questions With Integer Answers</h5>
-          <Text>{integerAnswersQuestions?.join(", ")}</Text>
-        </Space>
-        <Space direction="vertical">
-          <h5>Missing Questions</h5>
-          <Text>{missingQuestions?.join(", ")}</Text>
-        </Space>
-        <Space direction="vertical">
-          <Button onClick={() => setShowAnswers(true)}>Answers</Button>
-        </Space>
-        <Space direction="vertical">
-          <Button
-            onClick={() => {
-              setShowLevels(true);
-              setInitialLevels({ l1: "", l2: "", l3: "" });
-            }}
-          >
-            Levels
-          </Button>
-        </Space>
-        <Modal
+      <Row gutter={[16, 16]}>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Total</h5>
+            <Text>{totalQuestions}</Text>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Questions</h5>
+            <Text>
+              Start: {staertAndEndNo.start} End: {staertAndEndNo.end}
+            </Text>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Questions With Options</h5>
+            <Text>{optionsQuestions?.join(", ")}</Text>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Repeat Questions</h5>
+            <Text>{repeatQuestions?.join(", ")}</Text>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Questions With Integer Answers</h5>
+            <Text>{integerAnswersQuestions?.join(", ")}</Text>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Missing Questions</h5>
+            <Text>{missingQuestions?.join(", ")}</Text>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <Button onClick={() => setShowAnswers(true)}>Answers</Button>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <Button
+              onClick={() => {
+                setShowLevels(true);
+                setInitialLevels({ l1: "", l2: "", l3: "" });
+              }}
+            >
+              Levels
+            </Button>
+          </Space>
+        </Col>
+      </Row>
+      <Modal
           title="Answers"
           open={showAnswers}
           onCancel={() => setShowAnswers(false)}
@@ -277,7 +296,6 @@ export const QuestionsListInfo = ({
             </Flex>
           </Modal>
         )}
-      </Flex>
     </>
   );
 };
