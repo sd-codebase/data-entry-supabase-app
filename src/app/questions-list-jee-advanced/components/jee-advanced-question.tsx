@@ -39,6 +39,7 @@ const TYPES_WITH_OPTIONS = [
   "Multiple Correct",
   "Assertion Reason/Statement Based",
   "True/False",
+  "Comprehension Based/Passage Based",
 ];
 
 // Get color for question type tag
