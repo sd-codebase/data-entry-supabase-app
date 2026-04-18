@@ -7,6 +7,7 @@ import {
   Flex,
   Input,
   message,
+  Radio,
   Tag,
   Typography,
 } from "antd";
@@ -38,7 +39,7 @@ const TYPES_WITH_OPTIONS = [
   "Single Correct",
   "Multiple Correct",
   "Assertion Reason/Statement Based",
-  "True/False",
+  "Match the Column",
   "Comprehension Based/Passage Based",
 ];
 
@@ -64,6 +65,12 @@ const hasOptionsForType = (type: string): boolean => {
   return TYPES_WITH_OPTIONS.some(t =>
     type.toLowerCase().includes(t.toLowerCase())
   );
+};
+
+// Check if type is True/False
+const isTrueFalseType = (type: string): boolean => {
+  if (!type) return false;
+  return type.toLowerCase().includes("true") || type.toLowerCase().includes("false");
 };
 
 export const JeeAdvancedQuestion = ({
@@ -357,42 +364,56 @@ export const JeeAdvancedQuestion = ({
                 style={{ marginBottom: "0.5rem" }}
               />
 
-              {/* Options Editor (only for types with options) */}
-              {showOptions && que.options && (
+              {/* True/False Radio (for True/False type) */}
+              {isTrueFalseType(que.type) ? (
+                <Radio.Group
+                  value={que.answer}
+                  onChange={(e) => updateQuestion(e.target.value, "answer")}
+                  style={{ marginBottom: "0.5rem" }}
+                >
+                  <Radio value="True">True</Radio>
+                  <Radio value="False">False</Radio>
+                </Radio.Group>
+              ) : (
                 <>
-                  {Object.keys(que.options).map(
-                    (opKey: string, index: number) => (
-                      <Flex
-                        key={index}
-                        style={{ marginBottom: "0.5rem" }}
-                        gap={"0.25rem"}
-                      >
-                        {opKey})
-                        <TextAreaWithImageTools
-                          rows={2}
-                          value={que.options[opKey]}
-                          onChange={(value) =>
-                            updateQuestion(value, "options", opKey)
-                          }
-                          topicNumber={topicNumber}
-                          questionNumber={que.srNo}
-                        />
-                      </Flex>
-                    )
+                  {/* Options Editor (only for types with options) */}
+                  {showOptions && que.options && (
+                    <>
+                      {Object.keys(que.options).map(
+                        (opKey: string, index: number) => (
+                          <Flex
+                            key={index}
+                            style={{ marginBottom: "0.5rem" }}
+                            gap={"0.25rem"}
+                          >
+                            {opKey})
+                            <TextAreaWithImageTools
+                              rows={2}
+                              value={que.options[opKey]}
+                              onChange={(value) =>
+                                updateQuestion(value, "options", opKey)
+                              }
+                              topicNumber={topicNumber}
+                              questionNumber={que.srNo}
+                            />
+                          </Flex>
+                        )
+                      )}
+                    </>
                   )}
+
+                  {/* Answer Editor */}
+                  <TextAreaWithImageTools
+                    rows={1}
+                    style={{ marginBottom: "0.5rem", marginTop: "0.5rem" }}
+                    value={que.answer}
+                    onChange={(value) => updateQuestion(value, "answer")}
+                    placeholder="Answer"
+                    topicNumber={topicNumber}
+                    questionNumber={que.srNo}
+                  />
                 </>
               )}
-
-              {/* Answer Editor */}
-              <TextAreaWithImageTools
-                rows={1}
-                style={{ marginBottom: "0.5rem", marginTop: "0.5rem" }}
-                value={que.answer}
-                onChange={(value) => updateQuestion(value, "answer")}
-                placeholder="Answer"
-                topicNumber={topicNumber}
-                questionNumber={que.srNo}
-              />
             </Flex>
           ) : null}
 
