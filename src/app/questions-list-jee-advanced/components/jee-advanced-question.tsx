@@ -8,6 +8,7 @@ import {
   Input,
   message,
   Radio,
+  Select,
   Tag,
   Typography,
 } from "antd";
@@ -29,6 +30,7 @@ interface JeeAdvancedQuestionProps {
   topicId?: string;
   topicNumber?: number;
   onlyPreview?: boolean;
+  availableParagraphs?: { id: string; content: string }[];
 }
 
 const { Text, Title } = Typography;
@@ -80,6 +82,7 @@ export const JeeAdvancedQuestion = ({
   topicId,
   topicNumber,
   onlyPreview = false,
+  availableParagraphs = [],
 }: JeeAdvancedQuestionProps) => {
   const [que, setQue] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
@@ -203,6 +206,7 @@ export const JeeAdvancedQuestion = ({
           topic_id: que.topicId,
           type: que.type,
           verified_in_app: false,
+          paragraph_id: que.paragraphId || null,
         };
 
         if (que.isMarkedForReview) {
@@ -319,6 +323,26 @@ export const JeeAdvancedQuestion = ({
         <Flex gap={"1rem"}>
           {!onlyPreview ? (
             <Flex vertical gap="0.5rem" style={{ width: "50%" }}>
+              {/* Paragraph Selector */}
+              <Select
+                style={{ width: "100%", marginBottom: "0.5rem" }}
+                placeholder="Select paragraph (optional)"
+                allowClear
+                value={que.paragraphId || undefined}
+                onChange={(value) => {
+                  const selected = availableParagraphs.find((p) => p.id === value);
+                  updateQuestion(value || null, "paragraphId");
+                  setParagraphContent(selected?.content || "");
+                }}
+                options={[
+                  { label: "None", value: "" },
+                  ...availableParagraphs.map((p) => ({
+                    label: p.content.slice(0, 80) + (p.content.length > 80 ? "..." : ""),
+                    value: p.id,
+                  })),
+                ]}
+              />
+
               {/* Paragraph Editor (for Comprehension types) */}
               {que.paragraphId && (
                 <div style={{ marginBottom: "1rem", padding: "0.5rem", background: "#f5f5f5", borderRadius: 4 }}>

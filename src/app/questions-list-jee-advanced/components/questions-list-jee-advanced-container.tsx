@@ -10,10 +10,25 @@ import { JeeAdvancedQuestion } from "./jee-advanced-question";
 export function QuestionsListJeeAdvancedContainer() {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [questions, setQuestions] = useState<Record<string, any>[]>([]);
+  const [availableParagraphs, setAvailableParagraphs] = useState<{ id: string; content: string }[]>([]);
 
   useEffect(() => {
     fetchQuestions();
+    fetchParagraphs();
   }, [filters]);
+
+  const fetchParagraphs = async () => {
+    if (!filters?.topic?.id) return;
+    const { data, error } = await supabaseBrowserClient
+      .from("paragraphs")
+      .select("id, content")
+      .eq("topic_id", filters.topic.id);
+    if (error) {
+      console.error("Error fetching paragraphs:", error);
+      return;
+    }
+    setAvailableParagraphs(data || []);
+  };
 
   const fetchQuestions = async () => {
     if (!filters?.topic?.id) {
@@ -74,7 +89,9 @@ export function QuestionsListJeeAdvancedContainer() {
               <JeeAdvancedQuestion
                 question={question}
                 handleUpdate={(que) => handleUpdate(que, index)}
+                topicId={filters?.topic?.id}
                 topicNumber={filters?.topic?.order}
+                availableParagraphs={availableParagraphs}
               />
             </div>
           ))}
