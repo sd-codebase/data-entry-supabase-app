@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <title>KaTeX Solution</title>
+
+    <!-- KaTeX CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+    />
+
+    <!-- KaTeX JS -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"
+    ></script>
+
+    <!-- Auto Render -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"
+    ></script>
+
+    <style>
+      body {
+        font-family: Arial, sans-serif;
+        background: #f5f5f5;
+        padding: 40px;
+        line-height: 1.8;
+      }
+
+      .container {
+        width: 100%;
+        max-width: 100%;
+        overflow-x: auto;
+        text-align: left;
+        background: white;
+        padding: 30px;
+        border-radius: 12px;
+      }
+
+      .katex-display {
+        display: block;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding: 4px 0;
+        text-align: left !important;
+      }
+
+      .katex-display > .katex {
+        text-align: left !important;
+      }
+
+      .katex {
+        white-space: normal !important;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="container">
+      $$ \textbf{Solution} $$ $$ \begin{aligned} 1.\;& \text{Given radius of
+      sphere is} \\ & r = (7.50 \pm 0.85)\,\text{cm}. \end{aligned} $$ $$
+      \begin{aligned} 2.\;& \text{Volume of sphere is proportional to} \\ & r^3.
+      \end{aligned} $$ $$ \begin{aligned} 3.\;& \text{Hence percentage error in
+      volume is} \\ & \frac{\Delta V}{V}\times100 = 3\frac{\Delta
+      r}{r}\times100. \end{aligned} $$ $$ \begin{aligned} 4.\;&
+      \text{Substituting values,} \\ & x = 3\times\frac{0.85}{7.50}\times100 \\
+      & = 34. \end{aligned} $$ $$ \begin{aligned} 5.\;& \text{Therefore,
+      percentage error in volume} \\ & \text{is } 34\%. \end{aligned} $$ $$
+      \boxed{\text{Correct Option: }34} $$
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", function () {
+        renderMathInElement(document.body, {
+          delimiters: [
+            { left: "$$", right: "$$", display: true },
+            { left: "\\(", right: "\\)", display: false },
+          ],
+        });
+      });
+    </script>
+  </body>
+</html>
