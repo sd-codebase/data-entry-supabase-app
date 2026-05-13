@@ -1,0 +1,15 @@
+.solution-expression .katex-display {
+  display: block;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0;
+  text-align: left !important;
+}
+
+.solution-expression .katex-display > .katex {
+  text-align: left !important;
+}
+
+.solution-expression .katex {
+  white-space: normal !important;
+}

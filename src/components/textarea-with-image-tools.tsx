@@ -7,6 +7,7 @@ import {
   CloudUploadOutlined,
   LoadingOutlined,
   DeleteOutlined,
+  SnippetsOutlined,
 } from "@ant-design/icons";
 import {
   toggleSmilePrefix,
@@ -106,6 +107,21 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
       }
     }
   }, [uploadImage, insertAtCursor, topicNumber, questionNumber]);
+
+  const handlePasteFromClipboard = useCallback(async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      onChange(text);
+    } catch (err) {
+      if (err instanceof Error && err.name === "NotAllowedError") {
+        message.error(
+          "Clipboard access denied. Please allow clipboard permissions."
+        );
+      } else {
+        message.error("Failed to read clipboard");
+      }
+    }
+  }, [onChange]);
 
   const handleClear = useCallback(() => {
     const textarea = textareaRef.current?.resizableTextArea?.textArea;
@@ -327,6 +343,14 @@ export const TextAreaWithImageTools: React.FC<TextAreaWithImageToolsProps> = ({
           disabled={isUploading}
           loading={isUploading}
         />
+        <Tooltip title="Paste text from clipboard (replaces all)">
+          <Button
+            size="small"
+            icon={<SnippetsOutlined />}
+            onClick={handlePasteFromClipboard}
+            disabled={isUploading}
+          />
+        </Tooltip>
         <Button
           size="small"
           onClick={handleInsertRowSeparator}

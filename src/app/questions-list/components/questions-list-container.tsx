@@ -4,13 +4,14 @@ import { supabaseBrowserClient } from "@utils/supabase/client";
 import DropdownFilters from "../../../components/dropdown-filters/dropdown-filters";
 import { Question } from "@app/questions/components/question/question";
 import { Flex } from "antd";
-import React, { use, useEffect, useState } from "react";
+import React, { use, useEffect, useRef, useState } from "react";
 import { QuestionsListInfo } from "./questions-list-info";
 import { FloatButton } from "antd";
 
 export function QuestionsListContainer() {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [questions, setQuestions] = useState<Record<string, any>[]>([]);
+  const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
     fetchQuestions();
@@ -59,6 +60,14 @@ export function QuestionsListContainer() {
     const queList = [...questions];
     queList[index] = question;
     setQuestions(queList);
+
+    const nextRef = questionRefs.current[index + 1];
+    if (nextRef) {
+      const headerEl = document.querySelector("header");
+      const headerHeight = headerEl?.offsetHeight ?? 64;
+      const top = nextRef.getBoundingClientRect().top + window.scrollY - headerHeight;
+      window.scrollTo({ top, behavior: "smooth" });
+    }
   };
 
   return (
@@ -68,11 +77,12 @@ export function QuestionsListContainer() {
         <QuestionsListInfo questions={questions} />
         <Flex vertical gap={12} style={{ width: "100%" }}>
           {questions?.map((question, index) => (
-            <div key={index}>
+            <div key={index} ref={(el) => { questionRefs.current[index] = el; }}>
               <Question
                 question={question}
                 handleUpdate={(que) => handleUpdate(que, index)}
                 topicNumber={filters?.topic?.order}
+                showSolutions={true}
               />
             </div>
           ))}

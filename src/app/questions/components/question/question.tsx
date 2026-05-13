@@ -5,19 +5,23 @@ import {
   Flex,
   Input,
   message,
+  Modal,
   Space,
   Typography,
 } from "antd";
 import { supabaseBrowserClient } from "@utils/supabase/client";
 import MathExpression from "./math-expression";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { TextAreaWithImageTools } from "@components/textarea-with-image-tools";
 import {
+  CameraOutlined,
   CheckCircleOutlined,
   CheckOutlined,
   ClockCircleOutlined,
   ReloadOutlined,
 } from "@ant-design/icons";
+import { toPng } from "html-to-image";
+import { SolutionExpression } from "./solution-expression";
 
 interface QuestionProps {
   question: any;
@@ -26,6 +30,7 @@ interface QuestionProps {
   topicId?: string;
   topicNumber?: number;
   onlyPreview?: boolean;
+  showSolutions?: boolean;
 }
 
 const { Text, Title } = Typography;
@@ -38,9 +43,12 @@ export const Question = ({
   topicId,
   topicNumber,
   onlyPreview = false,
+  showSolutions = false,
 }: QuestionProps) => {
   const [que, setQue] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
+  const [isSolutionModalOpen, setIsSolutionModalOpen] = useState(false);
+  const previewRef = useRef<HTMLDivElement>(null);
   const optionNumbers: any = {
     1: "a",
     2: "b",
@@ -56,6 +64,29 @@ export const Question = ({
       setQue(null);
     }
   }, [question]);
+
+  useEffect(() => {
+    if (!isSolutionModalOpen) return;
+
+    const handleFocus = async () => {
+      try {
+        const text = await navigator.clipboard.readText();
+        if (text.startsWith("$$")) {
+          setQue((prev: any) => {
+            const newSolutions = [...(prev.solutions || [])];
+            newSolutions[0] = text;
+            return { ...prev, solutions: newSolutions };
+          });
+          setIsPending(true);
+        }
+      } catch {
+        // clipboard read permission denied — silently ignore
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [isSolutionModalOpen]);
 
   const reloadQuestion = async () => {
     if (que.id) {
@@ -111,7 +142,7 @@ export const Question = ({
     setIsPending(true);
   };
 
-  const updateQuestionDetails = async () => {
+  const updateQuestionDetails = async (): Promise<boolean> => {
     try {
       const previouslyUpdated =
         JSON.parse(localStorage.getItem(`${topicId}-updated`) || "[]") || [];
@@ -155,7 +186,7 @@ export const Question = ({
         if (error) {
           console.error("Error updating question:", error);
           message.error("Failed to update question");
-          return;
+          return false;
         }
 
         message.success("Question updated successfully");
@@ -163,6 +194,7 @@ export const Question = ({
       } catch (err) {
         console.error(err);
         message.error("Failed to update question");
+        return false;
       }
     }
 
@@ -170,6 +202,33 @@ export const Question = ({
       handleUpdate(que);
     }
     setIsPending(false);
+    return true;
+  };
+
+  const handleModalUpdate = async () => {
+    setIsSolutionModalOpen(false);
+    await updateQuestionDetails();
+  };
+
+  const capturePreview = async () => {
+    if (!previewRef.current) return;
+    try {
+      // Run twice — first pass embeds fonts/SVGs, second pass captures correctly
+      await toPng(previewRef.current);
+      const dataUrl = await toPng(previewRef.current, {
+        backgroundColor: "#ffffff",
+        pixelRatio: 2,
+      });
+      const res = await fetch(dataUrl);
+      const blob = await res.blob();
+      await navigator.clipboard.write([
+        new ClipboardItem({ "image/png": blob }),
+      ]);
+      message.success("Screenshot copied to clipboard!");
+      setTimeout(() => setIsSolutionModalOpen(true), 2000);
+    } catch (err) {
+      message.error("Failed to capture screenshot");
+    }
   };
 
   if (que === null) {
@@ -324,52 +383,110 @@ export const Question = ({
                 questionNumber={que.srNo}
               />
 
-              {/* {que?.solutions?.length
-                ? que?.solutions.map((solution: string, index: number) => (
-                    <TextArea
+              {showSolutions
+                ? que?.solutions?.map((solution: string, index: number) => (
+                    <TextAreaWithImageTools
                       key={index}
                       rows={2}
                       value={solution}
-                      onChange={(e) =>
-                        updateQuestion(e.target.value, "solutions", index)
+                      onChange={(value) =>
+                        updateQuestion(value, "solutions", index)
                       }
+                      topicNumber={topicNumber}
+                      questionNumber={que.srNo}
                     />
                   ))
-                : null} */}
+                : null}
             </Flex>
           ) : null}
           <Flex vertical style={{ flex: 1 }}>
-            <MathExpression exp={que.question} />
-            <Text strong>{que.pyo}</Text>
-            {Object.keys(que.options || {})?.length > 0 ? (
+            <Button
+              icon={<CameraOutlined />}
+              size="small"
+              style={{ alignSelf: "flex-end", marginBottom: 8 }}
+              onClick={capturePreview}
+            >
+              Copy Preview
+            </Button>
+            <div ref={previewRef} style={{ padding: '16px' }}>
+              <MathExpression exp={que.question} />
+              <Text strong>{que.pyo}</Text>
+              {Object.keys(que.options || {})?.length > 0 ? (
+                <>
+                  <Title level={5}>Options:</Title>
+                  {Object.keys(que.options)?.map(
+                    (opKey: string, index: number) => (
+                      <Flex
+                        key={index}
+                        style={{ marginBottom: "0.5rem" }}
+                        gap={"0.25rem"}
+                      >
+                        {opKey})<MathExpression exp={que.options[opKey]} />
+                      </Flex>
+                    )
+                  )}
+                </>
+              ) : null}
+              <Title level={5}>Answer: {que.answer}</Title>
+            </div>
+            {showSolutions && que.solutions?.length ? (
               <>
-                <Title level={5}>Options:</Title>
-                {Object.keys(que.options)?.map(
-                  (opKey: string, index: number) => (
-                    <Flex
-                      key={index}
-                      style={{ marginBottom: "0.5rem" }}
-                      gap={"0.25rem"}
-                    >
-                      {opKey})<MathExpression exp={que.options[opKey]} />
-                    </Flex>
-                  )
-                )}
+                <Title level={5}>Solution:</Title>
+                {que.solutions.map((solution: string, index: number) => (
+                  <div key={index}>
+                    {index === 1 && solution?.trim() ? (
+                      <Title level={5}>Alternate Solution:</Title>
+                    ) : null}
+                    <SolutionExpression solution={solution} />
+                  </div>
+                ))}
               </>
             ) : null}
-            <Title level={5}>Answer: {que.answer}</Title>
-            {/* <Title level={5}>Solution: </Title> */}
-            {/* {que.solutions?.map((solution: any, index: number) => (
-              <div key={index}>
-                {index === 1 && solution?.trim() ? (
-                  <Title level={5}>Alternate Solution: </Title>
-                ) : null}
-                <MathExpression exp={solution} />
-              </div>
-            ))} */}
           </Flex>
         </Flex>
       </Card>
+      <Modal
+        title={`Q. ${que.srNo} – Edit Solution`}
+        open={isSolutionModalOpen}
+        onCancel={() => setIsSolutionModalOpen(false)}
+        maskClosable={false}
+        keyboard={false}
+        width="85vw"
+        footer={[
+          <Button key="close" onClick={() => setIsSolutionModalOpen(false)}>
+            Close
+          </Button>,
+          <Button key="update" type="primary" onClick={handleModalUpdate}>
+            Update
+          </Button>,
+        ]}
+      >
+        <Flex gap="1rem" style={{ minHeight: 300 }}>
+          <Flex vertical gap="0.5rem" style={{ width: "50%" }}>
+            {que?.solutions?.map((solution: string, index: number) => (
+              <TextAreaWithImageTools
+                key={index}
+                rows={6}
+                value={solution}
+                onChange={(value) => updateQuestion(value, "solutions", index)}
+                topicNumber={topicNumber}
+                questionNumber={que.srNo}
+              />
+            ))}
+          </Flex>
+          <Flex vertical style={{ flex: 1, overflowY: "auto" }}>
+            <Title level={5}>Preview:</Title>
+            {que.solutions?.map((solution: string, index: number) => (
+              <div key={index}>
+                {index === 1 && solution?.trim() ? (
+                  <Title level={5}>Alternate Solution:</Title>
+                ) : null}
+                <SolutionExpression solution={solution} />
+              </div>
+            ))}
+          </Flex>
+        </Flex>
+      </Modal>
     </Badge.Ribbon>
   );
 };
