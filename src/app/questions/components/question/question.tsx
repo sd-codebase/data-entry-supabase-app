@@ -105,6 +105,22 @@ export const Question = ({
     capturePreview().then(() => onAutoCaptureComplete?.());
   }, [shouldAutoCapture]);
 
+  // Mark/unmark as verified. Only verified questions are promoted to production.
+  const toggleVerified = async () => {
+    if (!que?.id) return;
+    const next = !que.verified_in_app;
+    const { error } = await dbClient
+      .from("questions")
+      .update({ verified_in_app: next })
+      .eq("id", que.id);
+    if (error) {
+      message.error("Failed to update verified status");
+      return;
+    }
+    message.success(next ? "Marked verified" : "Marked not verified");
+    reloadQuestion();
+  };
+
   const reloadQuestion = async () => {
     if (que.id) {
       try {
@@ -282,11 +298,15 @@ export const Question = ({
               <Flex gap={"0.5rem"} style={{ paddingRight: "5rem" }}>
                 {que.id ? (
                   <>
-                    {que.verified_in_app ? (
-                      <Button color="green" variant="solid">
-                        <CheckOutlined />
-                      </Button>
-                    ) : null}
+                    <Button
+                      color={que.verified_in_app ? "green" : "default"}
+                      variant={que.verified_in_app ? "solid" : "outlined"}
+                      title="Only verified questions are promoted to production"
+                      onClick={toggleVerified}
+                    >
+                      <CheckOutlined />
+                      {que.verified_in_app ? "Verified" : "Verify"}
+                    </Button>
 
                     <Button
                       color="blue"

@@ -164,6 +164,14 @@ async function checkQuestionDuplicates(db: Db, rows: Document[], excludeIds: str
   }
 }
 
+// An empty solutions box ([""] / []) is stored as null, like most prod questions,
+// so saving a question without a solution is not a "change".
+function cleanSolutions(row: Document) {
+  if (Array.isArray(row.solutions) && row.solutions.every((x: unknown) => typeof x !== "string" || !x.trim())) {
+    row.solutions = null;
+  }
+}
+
 // ---------- actions ----------
 async function doSelect(db: Db, b: Body) {
   const cursor = db.collection(b.table).find(buildFilter(b.filters));
@@ -182,6 +190,7 @@ async function doInsert(db: Db, b: Body) {
     if (["courses", "subjects", "chapters", "topics"].includes(b.table)) base.description = null;
     return { ...base, ...rest };
   });
+  if (b.table === "questions") rows.forEach(cleanSolutions);
   await withParents(db, b.table, rows);
   if (b.table === "questions") await checkQuestionDuplicates(db, rows);
   try {
@@ -205,6 +214,7 @@ async function doUpdate(db: Db, b: Body) {
   if (!ids.length) return b.returning ? [] : null;
 
   values.updated_at = new Date();
+  if (b.table === "questions" && "solutions" in values) cleanSolutions(values);
   if ("topic_id" in values) await withParents(db, b.table, [values]);
   if (b.table === "questions" && ("question" in values || "answer" in values)) {
     if (ids.length > 1 && "question" in values) throw duplicateError();

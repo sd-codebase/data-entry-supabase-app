@@ -7,6 +7,8 @@ const exam = exams.EXAMS[examKey];
 const nextConfig = {
   transpilePackages: ["@refinedev/antd"],
   output: "standalone",
+  // One build folder per exam so several exams can run side by side.
+  distDir: `.next-${examKey}`,
   // Client-visible settings derived from EXAM (no per-exam env files needed).
   env: {
     NEXT_PUBLIC_EXAM: examKey,
