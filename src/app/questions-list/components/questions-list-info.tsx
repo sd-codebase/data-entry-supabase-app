@@ -9,8 +9,10 @@ import {
   Modal,
   Row,
   Space,
+  Switch,
   Typography,
 } from "antd";
+import { useOptionLabelStyle } from "@hooks/useOptionLabelStyle";
 import TextArea from "antd/es/input/TextArea";
 import React, { useEffect } from "react";
 
@@ -22,6 +24,7 @@ const { Text } = Typography;
 export const QuestionsListInfo = ({
   questions,
 }: QuestionsListInfoPropsType) => {
+  const { style: labelStyle, setStyle: setLabelStyle } = useOptionLabelStyle();
   const totalQuestions = questions.length;
   const [integerAnswersQuestions, setIntegerAnswersQuestions] = React.useState<
     number[]
@@ -224,6 +227,17 @@ export const QuestionsListInfo = ({
             >
               Levels
             </Button>
+          </Space>
+        </Col>
+        <Col xs={12} sm={8} md={6} lg={4} xl={3}>
+          <Space direction="vertical">
+            <h5>Option labels</h5>
+            <Switch
+              checked={labelStyle === "alpha"}
+              checkedChildren="a b c d"
+              unCheckedChildren="1 2 3 4"
+              onChange={(on) => setLabelStyle(on ? "alpha" : "numeric")}
+            />
           </Space>
         </Col>
       </Row>

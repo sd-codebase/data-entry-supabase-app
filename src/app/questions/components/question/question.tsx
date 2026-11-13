@@ -22,6 +22,7 @@ import {
 } from "@ant-design/icons";
 import { toPng } from "html-to-image";
 import { SolutionExpression } from "./solution-expression";
+import { optionLabel, useOptionLabelStyle } from "@hooks/useOptionLabelStyle";
 
 interface QuestionProps {
   question: any;
@@ -31,6 +32,8 @@ interface QuestionProps {
   topicNumber?: number;
   onlyPreview?: boolean;
   showSolutions?: boolean;
+  shouldAutoCapture?: boolean;
+  onAutoCaptureComplete?: () => void;
 }
 
 const { Text, Title } = Typography;
@@ -44,11 +47,14 @@ export const Question = ({
   topicNumber,
   onlyPreview = false,
   showSolutions = false,
+  shouldAutoCapture = false,
+  onAutoCaptureComplete,
 }: QuestionProps) => {
   const [que, setQue] = useState<any>(null);
   const [isPending, setIsPending] = useState(true);
   const [isSolutionModalOpen, setIsSolutionModalOpen] = useState(false);
   const previewRef = useRef<HTMLDivElement>(null);
+  const { style: labelStyle } = useOptionLabelStyle();
   const optionNumbers: any = {
     1: "a",
     2: "b",
@@ -72,12 +78,18 @@ export const Question = ({
       try {
         const text = await navigator.clipboard.readText();
         if (text.startsWith("$$")) {
+          let updatedQue: any;
           setQue((prev: any) => {
             const newSolutions = [...(prev.solutions || [])];
             newSolutions[0] = text;
-            return { ...prev, solutions: newSolutions };
+            updatedQue = { ...prev, solutions: newSolutions };
+            return updatedQue;
           });
           setIsPending(true);
+          setTimeout(() => {
+            setIsSolutionModalOpen(false);
+            updateQuestionDetails(updatedQue);
+          }, 1000);
         }
       } catch {
         // clipboard read permission denied — silently ignore
@@ -87,6 +99,11 @@ export const Question = ({
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [isSolutionModalOpen]);
+
+  useEffect(() => {
+    if (!shouldAutoCapture) return;
+    capturePreview().then(() => onAutoCaptureComplete?.());
+  }, [shouldAutoCapture]);
 
   const reloadQuestion = async () => {
     if (que.id) {
@@ -123,7 +140,22 @@ export const Question = ({
 
   const addOptionsIfMissing = (data: any) => {
     if (!data.hasIntegerAnswer) {
-      data.options = { a: "", b: "", c: "", d: "", ...data.options };
+      const opts = { ...(data.options || {}) };
+      const keys = Object.keys(opts);
+      if (!keys.length) {
+        // brand-new question: give 4 blank option slots
+        data.options = { 1: "", 2: "", 3: "", 4: "" };
+      } else {
+        // options already keyed (e.g. "1".."4"): drop blank filler keys
+        // (old a-d padding) so they neither render nor get saved back
+        const hasFilled = keys.some((k) => String(opts[k] ?? "").trim());
+        if (hasFilled) {
+          keys.forEach((k) => {
+            if (!String(opts[k] ?? "").trim() && /^[a-d]$/.test(k)) delete opts[k];
+          });
+        }
+        data.options = opts;
+      }
     }
     if (!data?.solutions?.length) {
       data.solutions = [""];
@@ -142,38 +174,39 @@ export const Question = ({
     setIsPending(true);
   };
 
-  const updateQuestionDetails = async (): Promise<boolean> => {
+  const updateQuestionDetails = async (queOverride?: any): Promise<boolean> => {
+    const q = queOverride ?? que;
     try {
       const previouslyUpdated =
         JSON.parse(localStorage.getItem(`${topicId}-updated`) || "[]") || [];
-      previouslyUpdated.push(que.srNo);
+      previouslyUpdated.push(q.srNo);
       localStorage.setItem(
         `${topicId}-updated`,
         JSON.stringify(previouslyUpdated)
       );
     } catch (error) {}
 
-    if (que.id) {
+    if (q.id) {
       try {
         const queOb: any = {
-          question: que.question,
-          options: que.options,
-          has_integer_answer: que.hasIntegerAnswer,
-          answer: que.answer,
-          solutions: que.solutions,
-          sr_no: que.srNo,
-          pyo: que.pyo,
-          topic_id: que.topicId,
+          question: q.question,
+          options: q.options,
+          has_integer_answer: q.hasIntegerAnswer,
+          answer: q.answer,
+          solutions: q.solutions,
+          sr_no: q.srNo,
+          pyo: q.pyo,
+          topic_id: q.topicId,
           verified_in_app: false,
         };
-        if (que.isMarkedForReview) {
-          queOb.is_marked_for_review = que.isMarkedForReview;
+        if (q.isMarkedForReview) {
+          queOb.is_marked_for_review = q.isMarkedForReview;
         }
-        if (que.reviewInApp) {
-          queOb.review_in_app = que.reviewInApp;
+        if (q.reviewInApp) {
+          queOb.review_in_app = q.reviewInApp;
         }
-        if (que.level) {
-          queOb.level = Number(que.level || 0);
+        if (q.level) {
+          queOb.level = Number(q.level || 0);
         } else {
           queOb.level = 0;
         }
@@ -181,7 +214,7 @@ export const Question = ({
         const { error } = await supabaseBrowserClient
           .from("questions")
           .update(queOb)
-          .eq("id", que.id);
+          .eq("id", q.id);
 
         if (error) {
           console.error("Error updating question:", error);
@@ -199,7 +232,7 @@ export const Question = ({
     }
 
     if (handleUpdate) {
-      handleUpdate(que);
+      handleUpdate(q);
     }
     setIsPending(false);
     return true;
@@ -225,7 +258,7 @@ export const Question = ({
         new ClipboardItem({ "image/png": blob }),
       ]);
       message.success("Screenshot copied to clipboard!");
-      setTimeout(() => setIsSolutionModalOpen(true), 2000);
+      setTimeout(() => setIsSolutionModalOpen(true), 500);
     } catch (err) {
       message.error("Failed to capture screenshot");
     }
@@ -320,7 +353,7 @@ export const Question = ({
                 <Button
                   color={isPending ? "orange" : "green"}
                   variant="solid"
-                  onClick={updateQuestionDetails}
+                  onClick={() => updateQuestionDetails()}
                 >
                   {isPending ? (
                     <ClockCircleOutlined />
@@ -360,7 +393,7 @@ export const Question = ({
                     style={{ marginBottom: "0.5rem" }}
                     gap={"0.25rem"}
                   >
-                    {opKey})
+                    {optionLabel(labelStyle, index)})
                     <TextAreaWithImageTools
                       rows={2}
                       value={que.options[opKey]}
@@ -411,22 +444,26 @@ export const Question = ({
             <div ref={previewRef} style={{ padding: '16px' }}>
               <MathExpression exp={que.question} />
               <Text strong>{que.pyo}</Text>
-              {Object.keys(que.options || {})?.length > 0 ? (
-                <>
-                  <Title level={5}>Options:</Title>
-                  {Object.keys(que.options)?.map(
-                    (opKey: string, index: number) => (
+              {(() => {
+                const filled = Object.keys(que.options || {}).filter((k) =>
+                  String(que.options[k] ?? "").trim()
+                );
+                return filled.length > 0 ? (
+                  <>
+                    <Title level={5}>Options:</Title>
+                    {filled.map((opKey: string, index: number) => (
                       <Flex
-                        key={index}
+                        key={opKey}
                         style={{ marginBottom: "0.5rem" }}
                         gap={"0.25rem"}
                       >
-                        {opKey})<MathExpression exp={que.options[opKey]} />
+                        {optionLabel(labelStyle, index)})
+                        <MathExpression exp={que.options[opKey]} />
                       </Flex>
-                    )
-                  )}
-                </>
-              ) : null}
+                    ))}
+                  </>
+                ) : null;
+              })()}
               <Title level={5}>Answer: {que.answer}</Title>
             </div>
             {showSolutions && que.solutions?.length ? (
