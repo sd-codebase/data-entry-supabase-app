@@ -4,6 +4,9 @@
 set -euo pipefail
 cd "$(dirname "$0")"; source ./config.sh
 KEEP="${KEEP:-14}"
+if [ "$(docker inspect -f '{{.State.Running}}' "$DEV_MONGO_CONTAINER" 2>/dev/null)" != "true" ]; then
+  echo "$(date '+%F %T') skip: dev mongo is not running (start it with npm run devdb:up)"; exit 0
+fi
 ts=$(date +%Y%m%d-%H%M%S)
 dest="$EMT_DEV_DATA/backups/$ts"
 mkdir -p "$dest"
