@@ -1,0 +1,485 @@
+(async function() {
+
+  let processInProgress = false;
+
+  // =========================
+  // REMOVE OLD BUTTON
+  // =========================
+  document.getElementById("imgPasteBtn")?.remove();
+
+  // =========================
+  // AUTO RUN ON WINDOW FOCUS
+  // =========================
+  window.addEventListener("focus", async () => {
+
+    console.log("🔙 Window focused");
+
+    if (processInProgress) {
+      console.log("⚠️ Already running");
+      return;
+    }
+
+    await pasteImageAndSend();
+
+  });
+
+  // =========================
+  // FLOATING BUTTON
+  // =========================
+  const btn = document.createElement("button");
+
+  btn.id = "imgPasteBtn";
+
+  btn.textContent = "🖼 Paste Image + Send";
+
+  Object.assign(btn.style, {
+    position: "fixed",
+    right: "10px",
+    bottom: "120px",
+    zIndex: "2147483647",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    background: "#0ea37a",
+    color: "#fff",
+    border: "none",
+    cursor: "pointer",
+    boxShadow: "0 6px 18px rgba(0,0,0,0.25)",
+    fontWeight: "600"
+  });
+
+  document.body.appendChild(btn);
+
+  // =========================
+  // TOAST
+  // =========================
+  function showToast(message = "Done!") {
+
+    try {
+
+      const ctx =
+        new (window.AudioContext || window.webkitAudioContext)();
+
+      const osc = ctx.createOscillator();
+
+      const gain = ctx.createGain();
+
+      osc.type = "sine";
+
+      osc.frequency.value = 880;
+
+      gain.gain.setValueAtTime(
+        0.2,
+        ctx.currentTime
+      );
+
+      gain.gain.exponentialRampToValueAtTime(
+        0.001,
+        ctx.currentTime + 0.4
+      );
+
+      osc.connect(gain);
+
+      gain.connect(ctx.destination);
+
+      osc.start();
+
+      osc.stop(ctx.currentTime + 0.4);
+
+    } catch (e) {
+
+      console.warn("Audio blocked:", e);
+    }
+
+    const toast = document.createElement("div");
+
+    toast.textContent = message;
+
+    Object.assign(toast.style, {
+      position: "fixed",
+      top: "40px",
+      right: "40px",
+      background: "#10a37f",
+      color: "white",
+      padding: "24px 32px",
+      borderRadius: "8px",
+      fontSize: "18px",
+      fontWeight: "600",
+      zIndex: "999999999",
+      opacity: "0",
+      transition: "opacity 0.3s ease",
+      boxShadow: "0 6px 18px rgba(0,0,0,0.25)"
+    });
+
+    document.body.appendChild(toast);
+
+    requestAnimationFrame(() => {
+      toast.style.opacity = "1";
+    });
+
+    setTimeout(() => {
+
+      toast.style.opacity = "0";
+
+      setTimeout(() => {
+        toast.remove();
+      }, 500);
+
+    }, 4000);
+  }
+
+  // =========================
+  // SPEAK
+  // =========================
+  function speakSlow(text) {
+
+    const synth = window.speechSynthesis;
+
+    const utterance =
+      new SpeechSynthesisUtterance(text);
+
+    const voices = synth.getVoices();
+
+    const indianVoice =
+      voices.find(v => v.lang === "en-IN") ||
+      voices.find(v => v.lang.includes("en"));
+
+    if (indianVoice) {
+      utterance.voice = indianVoice;
+    }
+
+    utterance.rate = 0.7;
+
+    utterance.pitch = 1.3;
+
+    synth.speak(utterance);
+  }
+
+  // =========================
+  // WAIT FOR UPLOAD
+  // =========================
+  async function waitForUploadComplete() {
+
+    console.log("📤 Waiting for upload completion...");
+
+    return new Promise(resolve => {
+
+      let stableCount = 0;
+
+      const interval = setInterval(() => {
+
+        // =====================
+        // SEND BUTTON
+        // =====================
+        const sendBtn =
+          document.querySelector("#composer-submit-button") ||
+          document.querySelector('[data-testid="send-button"]');
+
+        // =====================
+        // BUTTON READY?
+        // =====================
+        const sendReady =
+          sendBtn &&
+          !sendBtn.disabled;
+
+        // =====================
+        // IMAGE ATTACHED?
+        // =====================
+        const imageAttached =
+          document.querySelector("img") ||
+          document.querySelector('[data-testid="attachment-preview"]');
+
+        // =====================
+        // LOADING?
+        // =====================
+        const loadingSpinner =
+          document.querySelector("svg.animate-spin") ||
+          document.querySelector('[data-testid="file-upload-progress"]');
+
+        console.log({
+          sendReady,
+          imageAttached: !!imageAttached,
+          loadingSpinner: !!loadingSpinner
+        });
+
+        // =====================
+        // READY CHECK
+        // =====================
+        if (
+          sendReady &&
+          imageAttached &&
+          !loadingSpinner
+        ) {
+
+          stableCount++;
+
+          console.log("✅ Stable:", stableCount);
+
+          if (stableCount >= 2) {
+
+            clearInterval(interval);
+
+            console.log("🚀 Upload complete");
+
+            setTimeout(resolve, 800);
+          }
+
+        } else {
+
+          stableCount = 0;
+        }
+
+      }, 800);
+
+    });
+  }
+
+  // =========================
+  // WAIT GPT COMPLETE
+  // =========================
+  async function waitForGPTFinish() {
+
+    console.log("⌛ Waiting for GPT response...");
+
+    return new Promise(resolve => {
+
+      const interval = setInterval(() => {
+
+        const generating =
+          document.querySelector(
+            '[data-testid="stop-button"]'
+          );
+
+        // stop button gone = done
+        if (!generating) {
+
+          clearInterval(interval);
+
+          console.log("✅ GPT finished");
+
+          setTimeout(resolve, 2000);
+        }
+
+      }, 2000);
+
+    });
+  }
+
+  // =========================
+  // GET LAST CODE BLOCK
+  // =========================
+  function getLatestCodeBlock() {
+
+    const blocks =
+      [...document.querySelectorAll("pre code")];
+
+    if (!blocks.length) {
+      return null;
+    }
+
+    return blocks[blocks.length - 1].innerText;
+  }
+
+  // =========================
+  // MAIN
+  // =========================
+  async function pasteImageAndSend() {
+
+    processInProgress = true;
+
+    try {
+
+      // =====================
+      // READ CLIPBOARD
+      // =====================
+      const clipboardItems =
+        await navigator.clipboard.read();
+
+      let imageBlob = null;
+
+      for (const item of clipboardItems) {
+
+        const imageType =
+          item.types.find(type =>
+            type.startsWith("image/")
+          );
+
+        if (imageType) {
+
+          imageBlob =
+            await item.getType(imageType);
+
+          break;
+        }
+      }
+
+      if (!imageBlob) {
+
+        console.warn("❌ No image in clipboard");
+
+        speakSlow("No image found");
+
+        processInProgress = false;
+
+        return;
+      }
+
+      console.log("🖼 Clipboard image found");
+
+      // =====================
+      // FIND INPUT
+      // =====================
+      const input =
+        document.querySelector(
+          '[contenteditable="true"]'
+        ) ||
+        document.querySelector(
+          '[role="textbox"]'
+        ) ||
+        document.querySelector("textarea");
+
+      if (!input) {
+
+        alert("ChatGPT input not found");
+
+        processInProgress = false;
+
+        return;
+      }
+
+      input.focus();
+
+      // =====================
+      // CREATE FILE
+      // =====================
+      const file = new File(
+        [imageBlob],
+        `image-${Date.now()}.png`,
+        {
+          type: imageBlob.type
+        }
+      );
+
+      // =====================
+      // SIMULATE PASTE
+      // =====================
+      const dataTransfer =
+        new DataTransfer();
+
+      dataTransfer.items.add(file);
+
+      const pasteEvent =
+        new ClipboardEvent("paste", {
+          clipboardData: dataTransfer,
+          bubbles: true,
+          cancelable: true
+        });
+
+      input.dispatchEvent(pasteEvent);
+
+      console.log("📥 Image pasted");
+
+      btn.textContent = "📤 Uploading...";
+
+      // =====================
+      // WAIT UPLOAD
+      // =====================
+      await waitForUploadComplete();
+
+      // =====================
+      // CLICK SEND
+      // =====================
+      const sendBtn =
+        document.querySelector(
+          "#composer-submit-button"
+        ) ||
+        document.querySelector(
+          '[data-testid="send-button"]'
+        );
+
+      if (!sendBtn) {
+
+        console.warn("❌ Send button missing");
+
+        processInProgress = false;
+
+        return;
+      }
+
+      sendBtn.click();
+
+      console.log("🚀 Message sent");
+
+      btn.textContent = "⌛ GPT Working...";
+
+      // =====================
+      // WAIT GPT
+      // =====================
+      await waitForGPTFinish();
+
+      // =====================
+      // GET CODE
+      // =====================
+      const latestCode =
+        getLatestCodeBlock();
+
+      if (latestCode) {
+
+        await navigator.clipboard.writeText(
+          latestCode
+        );
+
+        console.log("📋 Code copied");
+
+        showToast("📋 Latest code copied!");
+
+        speakSlow("Code copied");
+
+        btn.textContent = "✅ Code Copied";
+
+      } else {
+
+        console.warn("⚠️ No code block");
+
+        showToast("⚠️ No code block found");
+
+        speakSlow("No code block found");
+
+        btn.textContent = "⚠️ No Code";
+      }
+
+    } catch (err) {
+
+      console.error("❌ Error:", err);
+
+      showToast("❌ Error occurred");
+
+      speakSlow("Error occurred");
+
+      btn.textContent = "❌ Error";
+
+    } finally {
+
+      processInProgress = false;
+
+      setTimeout(() => {
+
+        btn.textContent =
+          "🖼 Paste Image + Send";
+
+      }, 3000);
+    }
+  }
+
+  // =========================
+  // MANUAL BUTTON CLICK
+  // =========================
+  btn.addEventListener(
+    "click",
+    pasteImageAndSend
+  );
+
+  console.log(
+    "✅ Image Paste + AutoSend loaded"
+  );
+
+})();
