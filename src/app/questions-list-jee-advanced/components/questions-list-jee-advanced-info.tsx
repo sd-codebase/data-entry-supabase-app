@@ -1,6 +1,6 @@
 "use client";
 
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import {
   Button,
   Flex,
@@ -151,7 +151,7 @@ export const QuestionsListJeeAdvancedInfo = ({
       }
 
       for (const row of levelList) {
-        await supabaseBrowserClient
+        await dbClient
           .from("questions")
           .update({ level: row.level })
           .in("id", row.items);

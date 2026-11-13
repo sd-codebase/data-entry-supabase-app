@@ -1,4 +1,4 @@
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import {
   Button,
   Col,
@@ -151,7 +151,7 @@ export const QuestionsListInfo = ({
       console.log({ levelList });
 
       for (const row of levelList) {
-        await supabaseBrowserClient
+        await dbClient
           .from("questions")
           .update({ level: row.level })
           .in("id", row.items);

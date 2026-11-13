@@ -1,12 +1,12 @@
 "use client";
 
 import { useState } from "react";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import {
   STORAGE_BUCKET_NAME,
   generateUniqueFilename,
   getContentType,
-} from "@utils/supabase/storage-config";
+} from "@utils/storage-config";
 
 interface UploadResult {
   filename: string | null;
@@ -60,7 +60,7 @@ export function useImageUpload(): UseImageUploadReturn {
 
       console.log("Uploading to:", STORAGE_BUCKET_NAME, fullPath);
 
-      const { error: uploadError } = await supabaseBrowserClient.storage
+      const { error: uploadError } = await dbClient.storage
         .from(STORAGE_BUCKET_NAME)
         .upload(fullPath, file, {
           upsert: true,

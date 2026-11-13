@@ -5,7 +5,7 @@ import TextArea from "antd/lib/input/TextArea";
 import React, { useEffect, useState } from "react";
 import { Question } from "./question/question";
 import DropdownFilters from "../../../components/dropdown-filters/dropdown-filters";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import { FloatButton } from "antd";
 import { formatTableContent } from "@utils/formatter/table";
 
@@ -454,7 +454,7 @@ const QuestionComponent = (props: any) => {
         return;
       }
 
-      const { error } = await supabaseBrowserClient.from("questions").insert(
+      const { error } = await dbClient.from("questions").insert(
         questions.map((q) => ({
           question: q.question,
           options: q.options,

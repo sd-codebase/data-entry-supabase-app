@@ -1,0 +1,12 @@
+# Local dev MongoDB. Bound to localhost only, so no auth is needed.
+services:
+  mongo:
+    image: mongo:8
+    container_name: emt-dev-mongo
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${DEV_MONGO_PORT:-27019}:27017"
+    volumes:
+      - mongo-data:/data/db
+volumes:
+  mongo-data:

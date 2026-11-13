@@ -4,7 +4,7 @@ import DropdownFilters from "@components/dropdown-filters/dropdown-filters";
 import { AimOutlined, CheckCircleOutlined, CopyOutlined, EditOutlined, ExclamationCircleOutlined, EyeInvisibleOutlined, EyeOutlined, FileTextOutlined, FormatPainterOutlined, LinkOutlined, PictureOutlined, PlusOutlined, SaveOutlined, SearchOutlined, WarningOutlined } from "@ant-design/icons";
 import { Button, Card, Dropdown, Flex, Input, message, Tag, Typography } from "antd";
 import { useRef, useState } from "react";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -1132,7 +1132,7 @@ export default function NeetChapterQuestionsContainer() {
 
     setIsSaving(true);
     try {
-      const { error } = await supabaseBrowserClient.from("questions").insert(
+      const { error } = await dbClient.from("questions").insert(
         allQuestions.map((q) => ({
           question: q.question,
           options: q.options,
@@ -1184,7 +1184,7 @@ export default function NeetChapterQuestionsContainer() {
     }
 
     try {
-      const { data, error } = await supabaseBrowserClient
+      const { data, error } = await dbClient
         .from("topics")
         .insert({
           name: topicName,
@@ -1211,7 +1211,7 @@ export default function NeetChapterQuestionsContainer() {
 
   const handleUpdateTopic = async (topicId: string, newName: string) => {
     try {
-      const { data, error } = await supabaseBrowserClient
+      const { data, error } = await dbClient
         .from("topics")
         .update({ name: newName })
         .eq("id", topicId)

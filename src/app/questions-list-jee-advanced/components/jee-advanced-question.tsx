@@ -12,7 +12,7 @@ import {
   Tag,
   Typography,
 } from "antd";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import MathExpression from "@app/questions/components/question/math-expression";
 import { useEffect, useState } from "react";
 import { TextAreaWithImageTools } from "@components/textarea-with-image-tools";
@@ -115,10 +115,26 @@ export const JeeAdvancedQuestion = ({
     return data;
   };
 
+  // Mark/unmark as verified. Only verified questions are promoted to production.
+  const toggleVerified = async () => {
+    if (!que?.id) return;
+    const next = !que.verified_in_app;
+    const { error } = await dbClient
+      .from("questions")
+      .update({ verified_in_app: next })
+      .eq("id", que.id);
+    if (error) {
+      message.error("Failed to update verified status");
+      return;
+    }
+    message.success(next ? "Marked verified" : "Marked not verified");
+    reloadQuestion();
+  };
+
   const reloadQuestion = async () => {
     if (que.id) {
       try {
-        const { data, error } = await supabaseBrowserClient
+        const { data, error } = await dbClient
           .from("questions")
           .select("*, paragraphs(id, content)")
           .eq("id", que.id)
@@ -166,7 +182,7 @@ export const JeeAdvancedQuestion = ({
     if (!que.paragraphId || !paragraphContent) return;
 
     try {
-      const { error } = await supabaseBrowserClient
+      const { error } = await dbClient
         .from("paragraphs")
         .update({ content: paragraphContent })
         .eq("id", que.paragraphId);
@@ -221,7 +237,7 @@ export const JeeAdvancedQuestion = ({
           queOb.level = 0;
         }
 
-        const { error } = await supabaseBrowserClient
+        const { error } = await dbClient
           .from("questions")
           .update(queOb)
           .eq("id", que.id);
@@ -280,11 +296,15 @@ export const JeeAdvancedQuestion = ({
               <Flex gap={"0.5rem"} style={{ paddingRight: "5rem" }}>
                 {que.id ? (
                   <>
-                    {que.verified_in_app ? (
-                      <Button color="green" variant="solid">
-                        <CheckOutlined />
-                      </Button>
-                    ) : null}
+                    <Button
+                      color={que.verified_in_app ? "green" : "default"}
+                      variant={que.verified_in_app ? "solid" : "outlined"}
+                      title="Only verified questions are promoted to production"
+                      onClick={toggleVerified}
+                    >
+                      <CheckOutlined />
+                      {que.verified_in_app ? "Verified" : "Verify"}
+                    </Button>
 
                     <Button
                       color="blue"

@@ -20,7 +20,7 @@ import {
 } from "@ant-design/icons";
 import { Button, Card, Dropdown, Flex, Input, message, Modal, Tag, Typography } from "antd";
 import { useRef, useState } from "react";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 
 const { TextArea } = Input;
 const { Title, Text } = Typography;
@@ -1681,7 +1681,7 @@ export default function JeeAdvancedChapterQuestionsContainer() {
           return;
         }
 
-        const { data: paragraphData, error: paragraphError } = await supabaseBrowserClient
+        const { data: paragraphData, error: paragraphError } = await dbClient
           .from("paragraphs")
           .insert(
             jsonOutput.paragraphs.map((p) => ({
@@ -1711,7 +1711,7 @@ export default function JeeAdvancedChapterQuestionsContainer() {
       }
 
       // Step 2: Save questions with actual paragraph_id
-      const { error } = await supabaseBrowserClient.from("questions").insert(
+      const { error } = await dbClient.from("questions").insert(
         allQuestions.map((q) => ({
           question: q.question,
           options: q.options,
@@ -1827,7 +1827,7 @@ export default function JeeAdvancedChapterQuestionsContainer() {
     const resourcesDir = generateResourcesDirectory(subjectName, chapterName);
 
     try {
-      const { data, error } = await supabaseBrowserClient
+      const { data, error } = await dbClient
         .from("topics")
         .insert({
           name: topicName,
@@ -1855,7 +1855,7 @@ export default function JeeAdvancedChapterQuestionsContainer() {
 
   const handleUpdateTopic = async (topicId: string, newName: string) => {
     try {
-      const { data, error } = await supabaseBrowserClient
+      const { data, error } = await dbClient
         .from("topics")
         .update({ name: newName })
         .eq("id", topicId)
