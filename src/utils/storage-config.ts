@@ -1,5 +1,5 @@
-// Extract bucket name from NEXT_PUBLIC_RESOURCE_BUCKET_URL
-// URL format: https://xxx.supabase.co/storage/v1/object/public/bucket-name
+// Bucket name kept for the upload API shape; uploads go to the local dev
+// images folder regardless (see src/utils/db/client.ts).
 function getBucketName(): string {
   const bucketUrl = process.env.NEXT_PUBLIC_RESOURCE_BUCKET_URL || "";
   if (!bucketUrl) return "";

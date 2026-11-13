@@ -1,6 +1,6 @@
 "use client";
 
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import DropdownFilters from "../../../components/dropdown-filters/dropdown-filters";
 import { Flex, FloatButton } from "antd";
 import React, { useEffect, useMemo, useState } from "react";
@@ -44,7 +44,7 @@ export function QuestionsListJeeAdvancedContainer() {
   const fetchParagraphs = async () => {
     const topicIds = getTopicIds(filters);
     if (!topicIds.length) return;
-    const { data, error } = await supabaseBrowserClient
+    const { data, error } = await dbClient
       .from("paragraphs")
       .select("id, content, topic_id")
       .in("topic_id", topicIds);
@@ -63,7 +63,7 @@ export function QuestionsListJeeAdvancedContainer() {
 
     try {
       // Fetch questions with paragraph data for comprehension types
-      const { data, error } = await supabaseBrowserClient
+      const { data, error } = await dbClient
         .from("questions")
         .select("*, paragraphs(id, content)")
         .in("topic_id", topicIds)

@@ -1,6 +1,6 @@
 "use client";
 
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import {
   Alert,
   Button,
@@ -311,7 +311,7 @@ export default function BulkTopicsContainer() {
 
     try {
       // Step 1: Fetch all topics from database
-      const { data: topics, error: fetchError } = await supabaseBrowserClient
+      const { data: topics, error: fetchError } = await dbClient
         .from("topics")
         .select("resources_directory")
         .eq("is_active", true);
@@ -342,7 +342,7 @@ export default function BulkTopicsContainer() {
 
       for (const dir of uniqueDirs) {
         // Upload a .gitkeep placeholder to create directory
-        const { error: uploadError } = await supabaseBrowserClient.storage
+        const { error: uploadError } = await dbClient.storage
           .from(BUCKET_NAME)
           .upload(`${dir}/.gitkeep`, new Blob([""]), {
             upsert: true,
@@ -387,7 +387,7 @@ export default function BulkTopicsContainer() {
     try {
       // Step 1: Insert Course
       const { data: courseData, error: courseError } =
-        await supabaseBrowserClient
+        await dbClient
           .from("courses")
           .insert({ name: parsedData.course, is_active: true })
           .select("id")
@@ -409,7 +409,7 @@ export default function BulkTopicsContainer() {
       }));
 
       const { data: subjectsData, error: subjectsError } =
-        await supabaseBrowserClient
+        await dbClient
           .from("subjects")
           .insert(subjectInsertData)
           .select("id, name");
@@ -445,7 +445,7 @@ export default function BulkTopicsContainer() {
       });
 
       const { data: chaptersData, error: chaptersError } =
-        await supabaseBrowserClient
+        await dbClient
           .from("chapters")
           .insert(chapterInsertData)
           .select("id, name, subject_id");
@@ -487,7 +487,7 @@ export default function BulkTopicsContainer() {
         });
       });
 
-      const { error: topicsError } = await supabaseBrowserClient
+      const { error: topicsError } = await dbClient
         .from("topics")
         .insert(topicInsertData);
 

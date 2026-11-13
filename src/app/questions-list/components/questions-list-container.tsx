@@ -1,6 +1,6 @@
 "use client";
 
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import DropdownFilters from "../../../components/dropdown-filters/dropdown-filters";
 import { Question } from "@app/questions/components/question/question";
 import { Flex } from "antd";
@@ -24,7 +24,7 @@ export function QuestionsListContainer() {
     }
 
     try {
-      const { data, error } = await supabaseBrowserClient
+      const { data, error } = await dbClient
         .from("questions")
         .select("*")
         .eq("topic_id", filters.topic.id)

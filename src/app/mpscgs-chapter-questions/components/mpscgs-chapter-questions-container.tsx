@@ -1,7 +1,7 @@
 "use client";
 
 import DropdownFilters from "@/components/dropdown-filters/dropdown-filters";
-import { supabaseBrowserClient } from "@/utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import {
   CopyOutlined,
   SaveOutlined,
@@ -260,7 +260,7 @@ const MpscgsChapterQuestionsContainer = () => {
 
     setIsSaving(true);
     try {
-      const { error } = await supabaseBrowserClient.from("questions").insert(
+      const { error } = await dbClient.from("questions").insert(
         questions.map((q) => ({
           question: q.question,
           options: q.options,

@@ -12,7 +12,7 @@ import {
   Tag,
   Typography,
 } from "antd";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import MathExpression from "@app/questions/components/question/math-expression";
 import { useEffect, useState } from "react";
 import { TextAreaWithImageTools } from "@components/textarea-with-image-tools";
@@ -118,7 +118,7 @@ export const JeeAdvancedQuestion = ({
   const reloadQuestion = async () => {
     if (que.id) {
       try {
-        const { data, error } = await supabaseBrowserClient
+        const { data, error } = await dbClient
           .from("questions")
           .select("*, paragraphs(id, content)")
           .eq("id", que.id)
@@ -166,7 +166,7 @@ export const JeeAdvancedQuestion = ({
     if (!que.paragraphId || !paragraphContent) return;
 
     try {
-      const { error } = await supabaseBrowserClient
+      const { error } = await dbClient
         .from("paragraphs")
         .update({ content: paragraphContent })
         .eq("id", que.paragraphId);
@@ -221,7 +221,7 @@ export const JeeAdvancedQuestion = ({
           queOb.level = 0;
         }
 
-        const { error } = await supabaseBrowserClient
+        const { error } = await dbClient
           .from("questions")
           .update(queOb)
           .eq("id", que.id);

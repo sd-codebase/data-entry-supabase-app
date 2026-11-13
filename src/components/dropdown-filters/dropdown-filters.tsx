@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Button, Col, Form, Row, Select } from "antd";
 import React, { useEffect, useState } from "react";
-import { supabaseBrowserClient } from "@/utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 
 interface Course {
   id: string;
@@ -110,24 +110,24 @@ export default function DropdownFilters({
   const fetchOptions = async () => {
     try {
       const { data: courseData, error: courseError } =
-        await supabaseBrowserClient
+        await dbClient
           .from("courses")
           .select("*")
           .eq("is_active", true);
 
       const { data: subjectData, error: subjectError } =
-        await supabaseBrowserClient
+        await dbClient
           .from("subjects")
           .select("*")
           .eq("is_active", true);
 
       const { data: chapterData, error: chapterError } =
-        await supabaseBrowserClient
+        await dbClient
           .from("chapters")
           .select("*")
           .eq("is_active", true);
 
-      const { data: topicData, error: topicError } = await supabaseBrowserClient
+      const { data: topicData, error: topicError } = await dbClient
         .from("topics")
         .select("*")
         .eq("is_active", true);

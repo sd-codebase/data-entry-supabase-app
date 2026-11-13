@@ -9,7 +9,7 @@ import {
   Space,
   Typography,
 } from "antd";
-import { supabaseBrowserClient } from "@utils/supabase/client";
+import { dbClient } from "@utils/db/client";
 import MathExpression from "./math-expression";
 import { useEffect, useRef, useState } from "react";
 import { TextAreaWithImageTools } from "@components/textarea-with-image-tools";
@@ -108,7 +108,7 @@ export const Question = ({
   const reloadQuestion = async () => {
     if (que.id) {
       try {
-        const { data, error } = await supabaseBrowserClient
+        const { data, error } = await dbClient
           .from("questions")
           .select("*")
           .eq("id", que.id)
@@ -211,7 +211,7 @@ export const Question = ({
           queOb.level = 0;
         }
 
-        const { error } = await supabaseBrowserClient
+        const { error } = await dbClient
           .from("questions")
           .update(queOb)
           .eq("id", q.id);
