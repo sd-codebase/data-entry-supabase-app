@@ -39,8 +39,11 @@ interface Options {
 export default function DropdownFilters({
   handleFilterSubmit,
   noTopic,
+  topicOptional,
 }: {
   noTopic?: boolean;
+  // When true, Topic may be left empty to load the whole chapter.
+  topicOptional?: boolean;
   handleFilterSubmit: (values: Record<string, any>) => void;
 }) {
   const [form] = Form.useForm();
@@ -191,7 +194,12 @@ export default function DropdownFilters({
     const topics = options.topic.filter(
       ({ chapterId }) => chapterId === values.chapter
     );
-    localStorage.setItem("filespath", topic?.resources_directory as string);
+    // Resource directories are per chapter, so any topic of the chapter works
+    // when no topic is selected.
+    localStorage.setItem(
+      "filespath",
+      (topic?.resources_directory ?? topics[0]?.resources_directory) as string
+    );
     handleFilterSubmit({ course, subject, chapter, topic, topics });
   };
 
@@ -245,12 +253,19 @@ export default function DropdownFilters({
             <Form.Item
               label="Topic"
               name="topic"
-              rules={[{ required: true, message: "Please select topic!" }]}
+              rules={
+                topicOptional
+                  ? []
+                  : [{ required: true, message: "Please select topic!" }]
+              }
             >
               <Select
                 options={filteredOptions.topic}
                 style={{ width: "100%" }}
-                placeholder="Select topic"
+                placeholder={
+                  topicOptional ? "All topics (whole chapter)" : "Select topic"
+                }
+                allowClear={topicOptional}
               />
             </Form.Item>
           </Col>

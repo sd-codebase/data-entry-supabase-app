@@ -11,6 +11,7 @@ import { FloatButton } from "antd";
 export function QuestionsListContainer() {
   const [filters, setFilters] = useState<Record<string, any>>({});
   const [questions, setQuestions] = useState<Record<string, any>[]>([]);
+  const [autoCaptureIndex, setAutoCaptureIndex] = useState<number | null>(null);
   const questionRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   useEffect(() => {
@@ -68,6 +69,7 @@ export function QuestionsListContainer() {
       const top = nextRef.getBoundingClientRect().top + window.scrollY - headerHeight;
       window.scrollTo({ top, behavior: "smooth" });
     }
+    setAutoCaptureIndex(index + 1);
   };
 
   return (
@@ -83,6 +85,8 @@ export function QuestionsListContainer() {
                 handleUpdate={(que) => handleUpdate(que, index)}
                 topicNumber={filters?.topic?.order}
                 showSolutions={true}
+                shouldAutoCapture={autoCaptureIndex === index}
+                onAutoCaptureComplete={() => setAutoCaptureIndex(null)}
               />
             </div>
           ))}
