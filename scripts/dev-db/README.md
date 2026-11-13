@@ -38,3 +38,21 @@ npm run dev:mpscgs        # http://localhost:3023  (dev:jeemains 3020, dev:neet 
 - `src/utils/db/client.ts`: the supabase-style client the pages use; it calls `src/app/api/db/route.ts`.
 - Images: `/api/images/<resources_directory>/<file>` from `/Volumes/DevStorage/code/emt-dev-data/images/<exam>/`.
 - New questions get the same defaults Supabase used and their chapter/subject/course ids filled from the topic. Duplicate question+answer inserts are rejected as a whole, like before.
+
+## Promote dev → production
+
+```
+npm run devdb:promote -- mpscgs            # dry run: shows what would change, writes nothing
+npm run devdb:promote -- mpscgs --apply    # asks you to type the exam name, backs up prod, applies
+npm run devdb:rollback -- <log file>       # undo one promotion (logs in emt-dev-data/promotions)
+```
+
+- Compares dev and prod by `id`: courses, subjects, chapters, topics, paragraphs, questions, set_tests.
+- Questions go only if `verified_in_app` is true; unverified new/changed ones are shown as HOLD.
+- A passage goes only when every question using it is verified.
+- A question whose question+answer already exists in prod under another id is blocked.
+- Never deletes in prod. Items only in prod are listed as prod-only.
+- Images used by promoted questions are copied if new or changed; replaced prod files are kept in `/var/backups/emt/promote/<stamp>-<exam>-images-replaced`.
+- Before writing: full `mongodump` of that prod database to `/var/backups/emt/promote/`. Every write is logged (exact Mongo types) so rollback restores documents byte for byte.
+- If anything fails mid-way, what was written is rolled back automatically.
+- Unknown arguments are rejected. Test mode against a local copy needs all three of `--target-uri`, `--target-db`, `--target-images`.

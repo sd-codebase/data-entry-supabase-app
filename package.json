@@ -18,7 +18,9 @@
     "devdb:up": "bash scripts/dev-db/up.sh",
     "devdb:refresh": "bash scripts/dev-db/refresh-from-prod.sh",
     "devdb:backup": "bash scripts/dev-db/backup.sh",
-    "devdb:restore": "bash scripts/dev-db/restore.sh"
+    "devdb:restore": "bash scripts/dev-db/restore.sh",
+    "devdb:promote": "node scripts/dev-db/promote.mjs",
+    "devdb:rollback": "node scripts/dev-db/promote.mjs rollback"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
