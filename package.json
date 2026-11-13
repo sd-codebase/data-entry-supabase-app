@@ -14,7 +14,11 @@
     "build": "refine build",
     "start": "refine start",
     "lint": "next lint",
-    "refine": "refine"
+    "refine": "refine",
+    "devdb:up": "bash scripts/dev-db/up.sh",
+    "devdb:refresh": "bash scripts/dev-db/refresh-from-prod.sh",
+    "devdb:backup": "bash scripts/dev-db/backup.sh",
+    "devdb:restore": "bash scripts/dev-db/restore.sh"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
