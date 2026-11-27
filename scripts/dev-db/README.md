@@ -56,3 +56,38 @@ npm run devdb:rollback -- <log file>       # undo one promotion (logs in emt-dev
 - Before writing: full `mongodump` of that prod database to `/var/backups/emt/promote/`. Every write is logged (exact Mongo types) so rollback restores documents byte for byte.
 - If anything fails mid-way, what was written is rolled back automatically.
 - Unknown arguments are rejected. Test mode against a local copy needs all three of `--target-uri`, `--target-db`, `--target-images`.
+
+### Clear solutions in production (`--solutions-only`)
+
+```
+npm run devdb:promote -- jeemains --solutions-only           # dry run
+npm run devdb:promote -- jeemains --solutions-only --apply   # backs up prod, asks you to type the exam name
+```
+
+- For every question whose solution is empty in dev but not in prod (verified or not), sets prod `solutions` to null. No other field or collection is written.
+- Prod images used only by those solutions are moved (not deleted) to `/var/backups/emt/promote/<stamp>-<exam>-solution-images/`. Images still used by any question, option, other solution or passage, or whose name is referenced anywhere, stay.
+- Same safety as a normal promote: mongodump first, every write logged, automatic rollback on error, `npm run devdb:rollback -- <log>` restores the solutions and moves the images back.
+
+## Clear solutions in dev
+
+```
+npm run devdb:clear-solutions -- <exam|all>              # dry run
+npm run devdb:clear-solutions -- <exam|all> --apply      # saves solutions to emt-dev-data/cleared-solutions/, then clears
+npm run devdb:clear-solutions -- restore <file.json>     # put them back
+```
+
+- Local dev only. Touches only questions that really have a solution (already-empty ones are left alone). `verified_in_app` is not changed.
+- Afterwards run `devdb:clean-images` to quarantine the images that only the solutions used.
+
+## Clean unused dev images
+
+```
+npm run devdb:clean-images -- all            # dry run: unused files per exam (or one exam key)
+npm run devdb:clean-images -- all --apply    # move unused files to emt-dev-data/unused-images/<stamp>/
+npm run devdb:clean-images -- restore <dir>  # put a quarantine folder back
+```
+
+- Local dev only; production images are never touched.
+- "Used" = referenced by any question (active or inactive) or passage under its topic's folder. Files whose name is referenced anywhere in the exam are kept too.
+- Files are moved, not deleted (with `manifest.tsv`). Delete an old quarantine folder by hand when you're sure.
+- `devdb:refresh` mirrors prod images, so unused files come back after a refresh; run this again afterwards.

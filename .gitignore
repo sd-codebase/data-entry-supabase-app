@@ -32,6 +32,8 @@ yarn-error.log*
 .env*.jeemains
 .env*.jeeadvanced
 .env*.mpscgs
+.env*.mhtcetpcm
+.env*.mhtcetpcb
 
 # vercel
 .vercel

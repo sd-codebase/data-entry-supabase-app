@@ -7,9 +7,8 @@
 //
 // Rules
 // - Compares dev vs prod by `id` for: courses subjects chapters topics paragraphs questions set_tests.
-// - Questions go only when verified_in_app is true. Unverified new/changed ones are held back.
-// - A paragraph goes only when every dev question using it is verified.
-// - Questions whose (question, answer) already exists in prod under another id are blocked.
+// - FULL SYNC (user rule 2026-11-27): every new/changed item goes, no checks (active, verified, duplicates: none).
+//   Prod's own unique index (question+answer) could still reject a write -> the run rolls back and reports it.
 // - Never deletes in prod. Items only in prod are reported, not touched.
 // - Images: new/changed files are copied (never deleted); overwritten prod files are kept in a backup dir.
 // - Before applying: mongodump of the prod database on the VPS. Every write is logged so `rollback` can undo it.
@@ -52,8 +51,8 @@ const IGNORE_FIELDS = new Set(["_id", "updated_at"]); // a save with no real cha
 const args = process.argv.slice(2);
 // Reject anything unexpected: a mistyped or unsplit option must never fall back to production.
 {
-  const valued = new Set(["--target-uri", "--target-db", "--target-images"]);
-  const known = new Set([...valued, "--apply"]);
+  const valued = new Set(["--target-uri", "--target-db", "--target-images", "--confirm"]);
+  const known = new Set([...valued, "--apply", "--solutions-only"]);
   const positional = args[0] === "rollback" ? 2 : 1;
   for (let i = positional; i < args.length; i++) {
     if (!known.has(args[i])) {
@@ -80,6 +79,11 @@ const opt = (name) => {
   return i >= 0 ? args[i + 1] : undefined;
 };
 async function confirmProd(examKey) {
+  // Non-interactive confirmation (e.g. "! node ... --apply --confirm <exam>"): the typed exam name must match exactly.
+  if (opt("--confirm") !== undefined) {
+    if (opt("--confirm") !== examKey) throw new Error("--confirm does not match the exam name. Nothing was changed.");
+    return;
+  }
   if (!process.stdin.isTTY) throw new Error("Applying to PRODUCTION needs an interactive terminal to confirm.");
   const rl = (await import("readline")).createInterface({ input: process.stdin, output: process.stdout });
   const answer = await new Promise((r) => rl.question(`\nType the exam name (${examKey}) to apply these changes to PRODUCTION: `, r));
@@ -183,32 +187,74 @@ async function buildPlan(dev, prod) {
     plan[c] = { items, prodOnly: p.filter((x) => !dIds.has(x.id)).map((x) => x.id) };
   }
 
-  // questions: verified only; block (question, answer) clashes with other prod ids
-  const q = plan.questions;
-  for (const it of q.items) {
-    if (it.doc.verified_in_app !== true) it.hold = "not verified";
+  // questions (user rule 2026-11-27): FULL SYNC, no checks at all — active or not, verified or not, everything new/changed goes.
+  return plan;
+}
+
+// ---------------- --solutions-only mode ----------------
+// Clears `solutions` in prod for every question whose dev solution is empty while prod still has one
+// (verified or not). Only that field is written. Images used only by those solutions are moved to a
+// backup folder on the target (rollback moves them back).
+const hasSolution = (s) =>
+  Array.isArray(s) ? s.some((x) => typeof x === "string" && x.trim()) : typeof s === "string" && s.trim() !== "";
+const IMG_REF = /\{\{img(?:cell)?_(.+?)_img(?:cell)?\}\}/g;
+const refsIn = (v) => [...JSON.stringify(v ?? null).matchAll(IMG_REF)].map((m) => m[1].replace(/^(\{\{img(?:cell)?_)+/, ""));
+
+async function buildSolutionsPlan(dev, prod) {
+  const devSol = new Map((await dev.collection("questions").find({}, { projection: { id: 1, solutions: 1 } }).toArray()).map((d) => [d.id, d.solutions]));
+  const prodQ = await prod.collection("questions").find().toArray();
+  const items = [];
+  for (const p of prodQ) {
+    if (!devSol.has(p.id) || !hasSolution(p.solutions) || hasSolution(devSol.get(p.id))) continue;
+    items.push({ id: p.id, kind: "changed", fields: ["solutions"], doc: { id: p.id, solutions: null }, before: p, label: `sr_no ${p.sr_no}` });
   }
-  const candidates = q.items.filter((it) => !it.hold);
-  if (candidates.length) {
-    const clashes = await prod
-      .collection("questions")
-      .find({ $or: candidates.map((it) => ({ question: it.doc.question, answer: it.doc.answer })) }, { projection: { id: 1, question: 1, answer: 1 } })
-      .toArray();
-    const key = (x) => JSON.stringify([x.question, x.answer]);
-    const clashBy = new Map(clashes.map((x) => [key(x), x.id]));
-    for (const it of candidates) {
-      const other = clashBy.get(key(it.doc));
-      if (other && other !== it.id) it.hold = `duplicate of prod question ${other}`;
+  const plan = Object.fromEntries(COLLECTIONS.map((c) => [c, { items: [], prodOnly: [] }]));
+  plan.questions.items = items;
+  return { plan, prodQ };
+}
+
+async function solutionImagePlan(prod, items, prodQ, prodT) {
+  const topics = new Map((await prod.collection("topics").find().toArray()).map((t) => [t.id, t.resources_directory]));
+  const clearing = new Set(items.map((i) => i.id));
+  const used = new Set(), names = new Set(), cand = new Set();
+  for (const q of prodQ) {
+    const dir = topics.get(q.topic_id);
+    for (const f of refsIn([q.question, q.options])) { names.add(f); if (dir) used.add(path.posix.join(dir, f)); }
+    for (const f of refsIn(q.solutions)) {
+      if (!dir) { names.add(f); continue; }
+      if (clearing.has(q.id)) cand.add(path.posix.join(dir, f));
+      else { used.add(path.posix.join(dir, f)); names.add(f); }
     }
   }
-  // paragraphs: only when all dev questions using them are verified
-  if (plan.paragraphs.items.length) {
-    const unverifiedUsers = await dev
-      .collection("questions")
-      .distinct("paragraph_id", { paragraph_id: { $in: plan.paragraphs.items.map((i) => i.id) }, verified_in_app: { $ne: true } });
-    for (const it of plan.paragraphs.items) if (unverifiedUsers.includes(it.id)) it.hold = "used by unverified question";
+  const paraDir = new Map();
+  for (const q of prodQ) if (q.paragraph_id && !paraDir.has(q.paragraph_id)) paraDir.set(q.paragraph_id, topics.get(q.topic_id));
+  for (const p of await prod.collection("paragraphs").find().toArray()) {
+    for (const f of refsIn(p.content)) { names.add(f); const d = paraDir.get(p.id); if (d) used.add(path.posix.join(d, f)); }
   }
-  return plan;
+  // keep anything still used, or whose file name is referenced anywhere else
+  const wanted = [...cand].filter((f) => !used.has(f) && !names.has(path.posix.basename(f)));
+  if (!wanted.length) return [];
+  if (prodT.test) return wanted.filter((f) => fs.existsSync(path.join(prodT.imagesDir, f)));
+  const out = execFileSync("ssh", [...sshArgs, `cd '${prodT.imagesDir}' && while IFS= read -r f; do [ -f "$f" ] && printf '%s\\n' "$f"; done`], { input: wanted.join("\n") + "\n", encoding: "utf8", maxBuffer: 64 << 20 });
+  return out.split("\n").filter(Boolean);
+}
+
+function moveImages(prodT, files, fromDir, toDir) {
+  if (!files.length) return;
+  if (prodT.test) {
+    for (const f of files) {
+      fs.mkdirSync(path.dirname(path.join(toDir, f)), { recursive: true });
+      try {
+        fs.renameSync(path.join(fromDir, f), path.join(toDir, f));
+      } catch (e) {
+        if (e.code !== "EXDEV") throw e; // different disk: copy, then remove
+        fs.copyFileSync(path.join(fromDir, f), path.join(toDir, f));
+        fs.unlinkSync(path.join(fromDir, f));
+      }
+    }
+    return;
+  }
+  execFileSync("ssh", [...sshArgs, `cd '${fromDir}' && while IFS= read -r f; do mkdir -p "${toDir}/$(dirname "$f")" && mv -n "$f" "${toDir}/$f" || exit 1; done`], { input: files.join("\n") + "\n", encoding: "utf8", maxBuffer: 64 << 20 });
 }
 
 function imageNames(doc) {
@@ -257,7 +303,7 @@ function printPlan(examKey, plan, img) {
   }
   for (const c of COLLECTIONS) {
     for (const it of plan[c].items) {
-      const label = it.doc.name || (it.doc.sr_no != null ? `sr_no ${it.doc.sr_no}` : "") || "";
+      const label = it.label || it.doc.name || (it.doc.sr_no != null ? `sr_no ${it.doc.sr_no}` : "") || "";
       const what = it.kind === "new" ? "NEW" : `changed: ${it.fields.join(", ")}`;
       console.log(`  ${it.hold ? "HOLD" : "GO  "} ${c}/${it.id} ${label} — ${what}${it.hold ? `  [${it.hold}]` : ""}`);
     }
@@ -265,6 +311,7 @@ function printPlan(examKey, plan, img) {
   console.log(`images to copy: ${img.copy.length} (${img.copy.filter((x) => x.isNew).length} new, ${img.copy.filter((x) => !x.isNew).length} replaced)`);
   for (const x of img.copy) console.log(`  ${x.isNew ? "new " : "repl"} ${x.file}`);
   if (img.missingLocal.length) console.log(`WARNING images referenced but missing locally: ${img.missingLocal.join(", ")}`);
+  if (img.solMove) console.log(`solution-only images to move to a backup folder: ${img.solMove.length}`);
 }
 
 // ---------------- apply ----------------
@@ -284,12 +331,22 @@ async function apply(examKey, plan, img, prodT) {
   save();
 
   try {
+    // Batched: log the batch (with "before" states for rollback) once, then one bulkWrite per 1,000 docs.
+    // (Saving the whole log before every single write made big promotions take hours.)
+    const BATCH = 1000;
     for (const c of COLLECTIONS) {
-      for (const it of plan[c].items.filter((i) => !i.hold)) {
-        log.writes.push({ collection: c, id: it.id, before: it.before ? stripId(it.before) : null });
+      const items = plan[c].items.filter((i) => !i.hold);
+      for (let i = 0; i < items.length; i += BATCH) {
+        const part = items.slice(i, i + BATCH);
+        for (const it of part) log.writes.push({ collection: c, id: it.id, before: it.before ? stripId(it.before) : null });
         save();
-        await prodT.db.collection(c).updateOne({ id: it.id }, { $set: stripId(it.doc) }, { upsert: true });
+        await prodT.db.collection(c).bulkWrite(
+          part.map((it) => ({ updateOne: { filter: { id: it.id }, update: { $set: stripId(it.doc) }, upsert: true } })),
+          { ordered: true }
+        );
+        if (items.length > BATCH) process.stdout.write(`\r${c}: ${Math.min(i + BATCH, items.length)}/${items.length}`);
       }
+      if (items.length > BATCH) process.stdout.write("\n");
     }
     if (img.copy.length) {
       const backupDir = prodT.test ? path.join(PROMO_DIR, `${stamp}-${examKey}-images-replaced`) : `/var/backups/emt/promote/${stamp}-${examKey}-images-replaced`;
@@ -302,20 +359,32 @@ async function apply(examKey, plan, img, prodT) {
       const rsh = prodT.test ? [] : ["-e", `ssh -i ${VPS_KEY}`];
       execFileSync("rsync", ["-rc", "--backup", `--backup-dir=${backupDir}`, `--files-from=${img.listFile}`, ...rsh, path.join(DEV_DATA, "images", EXAMS[examKey].imagesFolder) + "/", dest], { stdio: "inherit" });
     }
+    if (img.solMove?.length) {
+      log.solImageDir = prodT.test ? path.join(PROMO_DIR, `${stamp}-${examKey}-solution-images`) : `/var/backups/emt/promote/${stamp}-${examKey}-solution-images`;
+      log.solImages = img.solMove;
+      save();
+      moveImages(prodT, img.solMove, prodT.imagesDir, log.solImageDir);
+    }
   } catch (e) {
     console.error(`\nERROR during apply: ${e.message}\nRolling back what was written ...`);
     await rollbackWith(prodT, log);
     save();
     throw e;
   }
-  console.log(`\nPromoted. ${log.writes.length} documents, ${log.images.length} images.\nRollback: npm run devdb:rollback -- ${logFile}`);
+  console.log(`\nPromoted. ${log.writes.length} documents, ${log.images.length} images${log.solImages ? `, ${log.solImages.length} solution images moved to ${log.solImageDir}` : ""}.\nRollback: npm run devdb:rollback -- ${logFile}`);
 }
 
 async function rollbackWith(prodT, log) {
-  for (const w of [...log.writes].reverse()) {
-    const coll = prodT.db.collection(w.collection);
-    if (w.before) await coll.replaceOne({ id: w.id }, w.before);
-    else await coll.deleteOne({ id: w.id });
+  // Batched undo, newest first, grouped per collection run (keeps the reverse order between collections).
+  const rev = [...log.writes].reverse();
+  for (let i = 0; i < rev.length; ) {
+    const c = rev[i].collection;
+    const ops = [];
+    while (i < rev.length && rev[i].collection === c && ops.length < 1000) {
+      const w = rev[i++];
+      ops.push(w.before ? { replaceOne: { filter: { id: w.id }, replacement: w.before } } : { deleteOne: { filter: { id: w.id } } });
+    }
+    await prodT.db.collection(c).bulkWrite(ops, { ordered: true });
   }
   if (log.images?.length) {
     const newOnes = log.images.filter((x) => x.isNew).map((x) => x.file);
@@ -330,6 +399,15 @@ async function rollbackWith(prodT, log) {
         ...replaced.map((f) => `cp -p ${q(path.posix.join(log.imageBackupDir, f))} ${q(path.posix.join(log.imagesDir, f))}`),
       ];
       if (cmds.length) ssh(cmds.join(" && "));
+    }
+  }
+  if (log.solImages?.length) {
+    // move solution images back (only those that actually reached the backup folder)
+    if (prodT.test) {
+      const back = log.solImages.filter((f) => fs.existsSync(path.join(log.solImageDir, f)));
+      moveImages(prodT, back, log.solImageDir, log.imagesDir);
+    } else {
+      execFileSync("ssh", [...sshArgs, `cd '${log.solImageDir}' 2>/dev/null || exit 0; while IFS= read -r f; do [ -f "$f" ] && mkdir -p "${log.imagesDir}/$(dirname "$f")" && mv -n "$f" "${log.imagesDir}/$f"; done; exit 0`], { input: log.solImages.join("\n") + "\n", encoding: "utf8" });
     }
   }
   log.rolledBackAt = new Date().toISOString();
@@ -364,10 +442,18 @@ async function main() {
       ? `TARGET: test database ${prodT.db.databaseName} (${opt("--target-uri")}), images ${prodT.imagesDir}`
       : `TARGET: PRODUCTION ${VPS_HOST} database ${prodT.db.databaseName}`);
     const dev = devClient.db(EXAMS[examKey].db);
-    const plan = await buildPlan(dev, prodT.db);
-    const img = await imagePlan(dev, plan, path.join(DEV_DATA, "images", EXAMS[examKey].imagesFolder), prodT);
+    let plan, img;
+    if (flag("--solutions-only")) {
+      console.log("MODE: --solutions-only (clear solutions that are empty in dev; nothing else is written)");
+      const s = await buildSolutionsPlan(dev, prodT.db);
+      plan = s.plan;
+      img = { copy: [], missingLocal: [], solMove: await solutionImagePlan(prodT.db, plan.questions.items, s.prodQ, prodT) };
+    } else {
+      plan = await buildPlan(dev, prodT.db);
+      img = await imagePlan(dev, plan, path.join(DEV_DATA, "images", EXAMS[examKey].imagesFolder), prodT);
+    }
     printPlan(examKey, plan, img);
-    const goCount = COLLECTIONS.reduce((n, c) => n + plan[c].items.filter((i) => !i.hold).length, 0) + img.copy.length;
+    const goCount = COLLECTIONS.reduce((n, c) => n + plan[c].items.filter((i) => !i.hold).length, 0) + img.copy.length + (img.solMove?.length || 0);
     if (!flag("--apply")) {
       console.log(goCount ? "\nDry run only. Re-run with --apply to promote the GO items." : "\nNothing to promote.");
       return;

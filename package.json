@@ -11,6 +11,8 @@
     "dev:neet": "cross-env NODE_OPTIONS=--max_old_space_size=4096 EXAM=neet PORT=3021 refine dev -- -H 127.0.0.1",
     "dev:jeeadvanced": "cross-env NODE_OPTIONS=--max_old_space_size=4096 EXAM=jeeadvanced PORT=3022 refine dev -- -H 127.0.0.1",
     "dev:mpscgs": "cross-env NODE_OPTIONS=--max_old_space_size=4096 EXAM=mpscgs PORT=3023 refine dev -- -H 127.0.0.1",
+    "dev:mhtcetpcm": "cross-env NODE_OPTIONS=--max_old_space_size=4096 EXAM=mhtcetpcm PORT=3024 refine dev -- -H 127.0.0.1",
+    "dev:mhtcetpcb": "cross-env NODE_OPTIONS=--max_old_space_size=4096 EXAM=mhtcetpcb PORT=3025 refine dev -- -H 127.0.0.1",
     "build": "refine build",
     "start": "refine start",
     "lint": "next lint",
@@ -20,7 +22,9 @@
     "devdb:backup": "bash scripts/dev-db/backup.sh",
     "devdb:restore": "bash scripts/dev-db/restore.sh",
     "devdb:promote": "node scripts/dev-db/promote.mjs",
-    "devdb:rollback": "node scripts/dev-db/promote.mjs rollback"
+    "devdb:rollback": "node scripts/dev-db/promote.mjs rollback",
+    "devdb:clean-images": "node scripts/dev-db/clean-images.mjs",
+    "devdb:clear-solutions": "node scripts/dev-db/clear-solutions.mjs"
   },
   "dependencies": {
     "@ant-design/icons": "^5.5.1",
