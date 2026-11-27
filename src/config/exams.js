@@ -5,6 +5,8 @@ const EXAMS = {
   neet: { name: "NEET", db: "neet", imagesFolder: "neet", port: 3021 },
   jeeadvanced: { name: "JEE Advanced", db: "jee-advanced", imagesFolder: "jeeadvanced", port: 3022 },
   mpscgs: { name: "MPSC GS", db: "mpsc-gs", imagesFolder: "mpscgs", port: 3023 },
+  mhtcetpcb: { name: "MHT-CET (PCB)", db: "mht-cet-pcb", imagesFolder: "mhtcetpcb", port: 3025 },
+  mhtcetpcm: { name: "MHT-CET (PCM)", db: "mht-cet-pcm", imagesFolder: "mhtcetpcm", port: 3024 },
 };
 
 function currentExamKey() {

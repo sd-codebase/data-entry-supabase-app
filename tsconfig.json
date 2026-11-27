@@ -37,7 +37,13 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    ".next-*/types/**/*.ts"
+    ".next-*/types/**/*.ts",
+    ".next-jeemains/types/**/*.ts",
+    ".next-neet/types/**/*.ts",
+    ".next-jeeadvanced/types/**/*.ts",
+    ".next-mpscgs/types/**/*.ts",
+    ".next-mhtcetpcm/types/**/*.ts",
+    ".next-mhtcetpcb/types/**/*.ts"
   ],
   "exclude": [
     "node_modules"
